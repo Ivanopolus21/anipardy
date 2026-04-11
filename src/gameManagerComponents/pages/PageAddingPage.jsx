@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getGameById, updateGame } from "../../db.js";
-import '../../index.css'
 
 function PageAddingPage() {
   const { id } = useParams();
@@ -26,61 +25,30 @@ function PageAddingPage() {
   async function addPage(type) {
     if (!game) return;
 
+    const newPage = {
+      id: crypto.randomUUID(),
+      type,
+      title: "",
+      createdAt: Date.now(),
+    };
+
+    const updatedGame = {
+      ...game,
+      gameConfig: {
+        ...game.gameConfig,
+        pages: [...(game.gameConfig?.pages || []), newPage],
+      },
+      updatedAt: Date.now(),
+    };
+
+    await updateGame(updatedGame);
+
     if (type === "board") {
-      const name = window.prompt("Name this board:", "New board")?.trim();
-
-      if (!name) return;
-
-      const newBoardPage = {
-        id: crypto.randomUUID(),
-        type: "board",
-        name,
-        isConfigured: false,
-        categories: [],
-        questionCount: 0,
-        background: null,
-        createdAt: Date.now(),
-      };
-
-      const updatedGame = {
-        ...game,
-        gameConfig: {
-          ...game.gameConfig,
-          pages: [...(game.gameConfig?.pages || []), newBoardPage],
-        },
-        updatedAt: Date.now(),
-      };
-
-      await updateGame(updatedGame);
-      navigate(`/game/${game.id}/board/${newBoardPage.id}/setup`);
+      navigate(`/game/${game.id}/board/${newPage.id}/setup`);
       return;
     }
 
-    if (type === "supergame") {
-      const name = window.prompt("Name this block:", "New supergame")?.trim();
-
-      if (!name) return;
-
-      const newPage = {
-        id: crypto.randomUUID(),
-        type,
-        name,
-        title: "",
-        createdAt: Date.now(),
-      };
-
-      const updatedGame = {
-        ...game,
-        gameConfig: {
-          ...game.gameConfig,
-          pages: [...(game.gameConfig?.pages || []), newPage],
-        },
-        updatedAt: Date.now(),
-      };
-
-      await updateGame(updatedGame);
-      navigate(`/game/${game.id}`);
-    }
+    navigate(`/game/${game.id}`);
   }
 
   if (!game) return <p>Loading...</p>;
@@ -95,11 +63,6 @@ function PageAddingPage() {
           <button onClick={() => addPage("board")} className="page-type-card">
             <h2>The Board</h2>
             <p>A board with categories, question values and players' scores.</p>
-          </button>
-
-          <button onClick={() => navigate(`/game/${game.id}/flows/new`)} className="page-type-card">
-            <h2>Question flow</h2>
-            <p>Create 1 or 2 question pages followed by an answer page.</p>
           </button>
 
           <button onClick={() => addPage("supergame")} className="page-type-card">

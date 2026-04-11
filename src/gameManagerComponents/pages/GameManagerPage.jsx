@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getGameById } from "../../db.js";
-import '../../index.css'
 
 function buildManagerItems(pages = []) {
     const items = [];
@@ -32,6 +31,19 @@ function buildManagerItems(pages = []) {
     }
 
     return items;
+}
+
+function getFlowAutoTitle(flowPages, currency = "Points") {
+    const linkedPage = flowPages.find(
+      (page) =>
+        page.boardLink?.categoryName &&
+        page.boardLink?.clueValue !== null &&
+        page.boardLink?.clueValue !== undefined
+    );
+
+    if (!linkedPage) return "Unlinked flow";
+
+    return `${linkedPage.boardLink.categoryName} - ${linkedPage.boardLink.clueValue} ${currency}`;
 }
 
 function GameManagerPage() {
@@ -66,19 +78,12 @@ function GameManagerPage() {
             return;
         }
 
-        const page = item.pages[0];
-
         if (item.itemType === "board") {
-            if (!page.isConfigured) {
-                navigate(`/game/${game.id}/board/${page.id}/setup`);
-                return;
-            }
-
-            navigate(`/game/${game.id}/board/${page.id}`);
+            navigate(`/game/${game.id}/board/${item.pages[0].id}`);
             return;
         }
 
-        navigate(`/game/${game.id}/page/${page.id}`);
+        navigate(`/game/${game.id}/page/${item.pages[0].id}`);
     }
 
     if (!game) return <p>Loading...</p>;
@@ -115,8 +120,8 @@ function GameManagerPage() {
                   {game.gameConfig?.players?.length > 0 ? (
                     <ul>
                         {game.gameConfig.players.map((player, index) => (
-                          <li key={player.id || index}>
-                              {typeof player === "string" ? player : player.playerName || "Unnamed player"}
+                          <li key={index}>
+                              {typeof player === "string" ? player : player.playerName}
                           </li>
                         ))}
                     </ul>
@@ -129,9 +134,7 @@ function GameManagerPage() {
                   <h2>Game pages</h2>
                   <p>Total items: {managerItems.length}</p>
 
-                  <button
-                    className="primary-btn"
-                    onClick={() => navigate(`/game/${game.id}/pages/new`)}>
+                  <button className={"primary-btn"} onClick={() => navigate(`/game/${game.id}/pages/new`)}>
                       Add new page
                   </button>
               </div>
@@ -151,11 +154,7 @@ function GameManagerPage() {
                                 onClick={() => openManagerItem(item)}
                               >
                                   <h3>{item.pages[0].name || "The Board"}</h3>
-                                  <p>
-                                      {item.pages[0].isConfigured
-                                        ? "Board page with categories and question values."
-                                        : "Board is not configured yet."}
-                                  </p>
+                                  <p>Board page with categories, question values and players' scores.</p>
                               </div>
                             );
                         }
@@ -167,7 +166,7 @@ function GameManagerPage() {
                                 className="page-card"
                                 onClick={() => openManagerItem(item)}
                               >
-                                  <h3>{item.pages[0].name || "Supergame"}</h3>
+                                  <h3>Supergame</h3>
                                   <p>Special final or bonus round page.</p>
                               </div>
                             );
@@ -182,13 +181,15 @@ function GameManagerPage() {
                               (page) => page.type === "answer"
                             ).length;
 
+                            const flowTitle = getFlowAutoTitle(item.pages, game.currency || "Points");
+
                             return (
                               <div
                                 key={item.id}
                                 className="page-card page-card--flow"
                                 onClick={() => openManagerItem(item)}
                               >
-                                  <h3>{item.pages[0].flowName || "Question flow"}</h3>
+                                  <h3>{flowTitle}</h3>
                                   <p>
                                       {questionStepsCount} question page{questionStepsCount !== 1 ? "s" : ""}
                                       {" + "}

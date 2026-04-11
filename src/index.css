@@ -4,8 +4,10 @@
   --surface-hover: #fcfaff;
   --text: #5f6170;
   --text-strong: #161722;
+  --text-h: #161722;
   --border: #e7e8ef;
   --accent: #a63df5;
+
   --accent-soft: rgba(166, 61, 245, 0.1);
   --accent-border: rgba(166, 61, 245, 0.35);
   --shadow-sm: 0 4px 14px rgba(16, 24, 40, 0.05);
@@ -840,6 +842,7 @@ textarea {
 .flow-editor-fields {
   display: grid;
   gap: 16px;
+  margin-top: 16px;
 }
 
 .flow-editor-field {
@@ -877,10 +880,11 @@ textarea {
 }
 
 .flow-editor-title-box {
-  margin-bottom: 18px;
-  padding: 16px;
+  margin-top: 8px;
+  padding: 18px 20px;
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 18px;
+  background: var(--bg);
 }
 
 .flow-editor-title-box__label {
@@ -892,8 +896,9 @@ textarea {
 }
 
 .flow-editor-title-preview {
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 1.6rem;
+  line-height: 1.2;
+  font-weight: 700;
   color: var(--text);
   word-break: break-word;
 }
@@ -905,9 +910,56 @@ textarea {
 }
 
 .flow-editor-checkbox {
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 10px;
-  margin-bottom: 18px;
+  margin: 18px 0 20px;
+  color: var(--text-h);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.flow-editor-checkbox input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  flex: 0 0 18px;
+  accent-color: var(--accent);
+}
+
+.flow-editor-checkbox span {
+  line-height: 1.35;
+}
+
+.flow-editor-checkbox,
+.flow-editor-field {
+  margin-bottom: 16px;
+}
+
+.flow-editor-file-note {
+  margin-top: -4px;
+  margin-bottom: 16px;
   color: var(--text);
+  font-size: 0.95rem;
+}
+
+.flow-editor-preview {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-hover);
+}
+
+.flow-editor-preview img,
+.flow-editor-preview video,
+.flow-editor-preview audio {
+  width: 100%;
+  max-width: 100%;
+  display: block;
+}
+
+.flow-editor-preview img,
+.flow-editor-preview video {
+  border-radius: 12px;
 }
