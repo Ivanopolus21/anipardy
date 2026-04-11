@@ -1,40 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getGameById, updateGame } from "../../db.js";
+import {
+  getGameById,
+  updateGame,
+  saveMedia,
+  getMediaById,
+} from "../../db.js";
 import "../../index.css";
-
-function readFileAsDataURL(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(new Error("Failed to read file"));
-
-    reader.readAsDataURL(file);
-  });
-}
-
-function getStepLabel(page, index) {
-  if (page.type === "answer") return "Answer";
-  return `Question ${index + 1}`;
-}
-
-function getAutoTitle(flowPages, game) {
-  const linkedPage = flowPages.find(
-    (page) =>
-      page.boardLink?.categoryName &&
-      page.boardLink?.clueValue !== null &&
-      page.boardLink?.clueValue !== undefined
-  );
-
-  if (!linkedPage) return "Unlinked flow";
-
-  const categoryName = linkedPage.boardLink.categoryName || "Category";
-  const clueValue = linkedPage.boardLink.clueValue ?? "?";
-  const currency = game?.currency || "Points";
-
-  return `${categoryName} - ${clueValue} ${currency}`;
-}
 
 function createEmptyTextBlock() {
   return {
@@ -47,9 +19,14 @@ function createEmptyMediaItem() {
   return {
     id: crypto.randomUUID(),
     type: "image",
-    src: "",
+    mediaId: "",
     name: "",
+    mimeType: "",
     alt: "",
+    previewUrl: "",
+    wasOptimized: false,
+    width: null,
+    height: null,
   };
 }
 
@@ -57,9 +34,132 @@ function normalizeMediaItem(item = {}) {
   return {
     id: item.id || crypto.randomUUID(),
     type: item.type || "image",
-    src: item.src || "",
+    mediaId: item.mediaId || "",
     name: item.name || "",
+    mimeType: item.mimeType || "",
     alt: item.alt || "",
+    previewUrl: "",
+    wasOptimized: Boolean(item.wasOptimized),
+    width: item.width ?? null,
+    height: item.height ?? null,
+  };
+}
+
+function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("Failed to read file"));
+
+    reader.readAsDataURL(file);
+  });
+}
+
+function loadImageFromDataURL(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("Failed to load image"));
+
+    img.src = dataUrl;
+  });
+}
+
+async function optimizeImageToBlob(file) {
+  const isGif =
+    file.type === "image/gif" || file.name.toLowerCase().endsWith(".gif");
+
+  if (isGif) {
+    return {
+      blob: file,
+      mimeType: file.type || "image/gif",
+      wasOptimized: false,
+      width: null,
+      height: null,
+    };
+  }
+
+  const originalDataUrl = await readFileAsDataURL(file);
+  const image = await loadImageFromDataURL(originalDataUrl);
+
+  const maxDimension = 1920;
+  let { width, height } = image;
+
+  if (width > maxDimension || height > maxDimension) {
+    const scale = Math.min(maxDimension / width, maxDimension / height);
+    width = Math.round(width * scale);
+    height = Math.round(height * scale);
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(image, 0, 0, width, height);
+
+  const isPng =
+    file.type === "image/png" || file.name.toLowerCase().endsWith(".png");
+
+  const outputType = isPng ? "image/png" : "image/jpeg";
+  const quality = isPng ? 1 : 0.86;
+
+  const optimizedBlob = await new Promise((resolve) => {
+    canvas.toBlob((blob) => resolve(blob || file), outputType, quality);
+  });
+
+  if (optimizedBlob.size >= file.size) {
+    return {
+      blob: file,
+      mimeType: file.type || outputType,
+      wasOptimized: false,
+      width: image.width,
+      height: image.height,
+    };
+  }
+
+  return {
+    blob: optimizedBlob,
+    mimeType: outputType,
+    wasOptimized: true,
+    width,
+    height,
+  };
+}
+
+async function createStoredMediaRecord(file) {
+  let processed = {
+    blob: file,
+    mimeType: file.type || "",
+    wasOptimized: false,
+    width: null,
+    height: null,
+  };
+
+  if (file.type.startsWith("image/")) {
+    processed = await optimizeImageToBlob(file);
+  }
+
+  const mediaRecord = {
+    id: crypto.randomUUID(),
+    blob: processed.blob,
+    name: file.name,
+    mimeType: processed.mimeType,
+    size: processed.blob.size || file.size || 0,
+    createdAt: Date.now(),
+  };
+
+  await saveMedia(mediaRecord);
+
+  return {
+    mediaId: mediaRecord.id,
+    name: mediaRecord.name,
+    mimeType: mediaRecord.mimeType,
+    wasOptimized: processed.wasOptimized,
+    width: processed.width,
+    height: processed.height,
   };
 }
 
@@ -99,6 +199,28 @@ function normalizePageContent(page) {
     textBlocks: [existingText[0] || createEmptyTextBlock()],
     mediaItems: [existingMedia[0] || createEmptyMediaItem()],
   };
+}
+
+function getStepLabel(page, index) {
+  if (page.type === "answer") return "Answer";
+  return `Question ${index + 1}`;
+}
+
+function getAutoTitle(flowPages, game) {
+  const linkedPage = flowPages.find(
+    (page) =>
+      page.boardLink?.categoryName &&
+      page.boardLink?.clueValue !== null &&
+      page.boardLink?.clueValue !== undefined
+  );
+
+  if (!linkedPage) return "Unlinked flow";
+
+  const categoryName = linkedPage.boardLink.categoryName || "Category";
+  const clueValue = linkedPage.boardLink.clueValue ?? "?";
+  const currency = game?.currency || "Points";
+
+  return `${categoryName} - ${clueValue} ${currency}`;
 }
 
 function QuestionFlowEditorPage() {
@@ -178,6 +300,51 @@ function QuestionFlowEditorPage() {
     });
   }, [activePage]);
 
+  useEffect(() => {
+    let isCancelled = false;
+    const objectUrls = [];
+
+    async function loadPreviewUrls() {
+      const itemsWithPreviews = await Promise.all(
+        draft.mediaItems.map(async (item) => {
+          if (!item.mediaId) {
+            return { ...item, previewUrl: "" };
+          }
+
+          const mediaRecord = await getMediaById(item.mediaId);
+
+          if (!mediaRecord?.blob) {
+            return { ...item, previewUrl: "" };
+          }
+
+          const previewUrl = URL.createObjectURL(mediaRecord.blob);
+          objectUrls.push(previewUrl);
+
+          return {
+            ...item,
+            previewUrl,
+          };
+        })
+      );
+
+      if (!isCancelled) {
+        setDraft((current) => ({
+          ...current,
+          mediaItems: itemsWithPreviews,
+        }));
+      }
+    }
+
+    if (draft.mediaItems.length > 0) {
+      loadPreviewUrls();
+    }
+
+    return () => {
+      isCancelled = true;
+      objectUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [activePageId, draft.mediaItems.length]);
+
   function updateDraftField(field, value) {
     setDraft((current) => ({
       ...current,
@@ -233,7 +400,11 @@ function QuestionFlowEditorPage() {
     if (!file) return;
 
     try {
-      const dataUrl = await readFileAsDataURL(file);
+      const storedMedia = await createStoredMediaRecord(file);
+      const previewRecord = await getMediaById(storedMedia.mediaId);
+      const previewUrl = previewRecord?.blob
+        ? URL.createObjectURL(previewRecord.blob)
+        : "";
 
       setDraft((current) => ({
         ...current,
@@ -241,14 +412,19 @@ function QuestionFlowEditorPage() {
           item.id === itemId
             ? {
               ...item,
-              src: dataUrl,
-              name: file.name,
+              mediaId: storedMedia.mediaId,
+              name: storedMedia.name,
+              mimeType: storedMedia.mimeType,
+              wasOptimized: storedMedia.wasOptimized,
+              width: storedMedia.width,
+              height: storedMedia.height,
+              previewUrl,
             }
             : item
         ),
       }));
     } catch (error) {
-      console.error(error);
+      console.error("Failed to store media:", error);
     }
   }
 
@@ -262,13 +438,15 @@ function QuestionFlowEditorPage() {
     const updatedPages = game.gameConfig.pages.map((page) => {
       if (page.id !== activePage.id) return page;
 
+      const sanitizedMediaItems = draft.mediaItems.map(({ previewUrl, ...item }) => item);
+
       const commonFields = {
         ...page,
         titleMode: draft.titleMode,
         customTitle: draft.titleMode === "custom" ? draft.customTitle : "",
         layout: draft.layout,
         textBlocks: draft.textBlocks,
-        mediaItems: draft.mediaItems,
+        mediaItems: sanitizedMediaItems,
         text: draft.textBlocks?.[0]?.value || "",
       };
 
@@ -458,21 +636,21 @@ function QuestionFlowEditorPage() {
                 </label>
               )}
 
-              {mediaItem.src && mediaItem.type === "image" && (
+              {mediaItem.previewUrl && mediaItem.type === "image" && (
                 <div className="flow-editor-preview">
-                  <img src={mediaItem.src} alt={mediaItem.alt || ""} />
+                  <img src={mediaItem.previewUrl} alt={mediaItem.alt || ""} />
                 </div>
               )}
 
-              {mediaItem.src && mediaItem.type === "audio" && (
+              {mediaItem.previewUrl && mediaItem.type === "audio" && (
                 <div className="flow-editor-preview">
-                  <audio controls src={mediaItem.src} />
+                  <audio controls src={mediaItem.previewUrl} />
                 </div>
               )}
 
-              {mediaItem.src && mediaItem.type === "video" && (
+              {mediaItem.previewUrl && mediaItem.type === "video" && (
                 <div className="flow-editor-preview">
-                  <video controls src={mediaItem.src} />
+                  <video controls src={mediaItem.previewUrl} />
                 </div>
               )}
             </div>

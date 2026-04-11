@@ -1,9 +1,14 @@
 import { openDB } from "idb";
 
-export const dbPromise = openDB("anipardy-db", 1, {
-    upgrade(db) {
+export const dbPromise = openDB("anipardy-db", 2, {
+    upgrade(db, oldVersion) {
         if (!db.objectStoreNames.contains("games")) {
             db.createObjectStore("games", { keyPath: "id" });
+        }
+
+        if (!db.objectStoreNames.contains("media")) {
+            const mediaStore = db.createObjectStore("media", { keyPath: "id" });
+            mediaStore.createIndex("createdAt", "createdAt");
         }
     },
 });
@@ -26,4 +31,24 @@ export async function getGameById(id) {
 export async function updateGame(updatedGame) {
     const db = await dbPromise;
     await db.put("games", updatedGame);
+}
+
+export async function saveMedia(mediaRecord) {
+    const db = await dbPromise;
+    await db.put("media", mediaRecord);
+}
+
+export async function getMediaById(id) {
+    const db = await dbPromise;
+    return await db.get("media", id);
+}
+
+export async function deleteMediaById(id) {
+    const db = await dbPromise;
+    await db.delete("media", id);
+}
+
+export async function getAllMedia() {
+    const db = await dbPromise;
+    return await db.getAll("media");
 }
