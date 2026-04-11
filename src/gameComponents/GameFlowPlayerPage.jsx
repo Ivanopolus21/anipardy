@@ -31,10 +31,10 @@ function GameFlowPlayerPage() {
   const [backgroundPreviewUrl, setBackgroundPreviewUrl] = useState("");
   const [timerRunning, setTimerRunning] = useState(false);
   const [timeLeft, setTimeLeft] = useState(60);
-  const [selectedPlayerId, setSelectedPlayerId] = useState("");
-  const [scoreAction, setScoreAction] = useState("add");
   const [lastScoreEvent, setLastScoreEvent] = useState(null);
   const [isSavingScore, setIsSavingScore] = useState(false);
+  const [scoreAmount, setScoreAmount] = useState(0);
+  const [isSubtractMode, setIsSubtractMode] = useState(false);
 
   useEffect(() => {
     async function loadGame() {
@@ -140,6 +140,10 @@ function GameFlowPlayerPage() {
     setTimerRunning(false);
     setTimeLeft(currentPage.enableTimer ? currentPage.timerSeconds ?? 60 : 60);
   }, [currentPage]);
+
+  useEffect(() => {
+    setScoreAmount(pointsValue || 0);
+  }, [pointsValue, currentPageId]);
 
   useEffect(() => {
     if (!timerRunning || !currentPage?.enableTimer || timeLeft <= 0) return;
@@ -251,10 +255,13 @@ function GameFlowPlayerPage() {
     return "gameConfig.players";
   }
 
-  async function applyScore(actionType) {
-    if (!game || !selectedPlayerId || !pointsValue || isSavingScore) return;
+  async function onPlayerScore(playerId) {
+    if (!game || !scoreAmount || isSavingScore) return;
 
-    const delta = actionType === "subtract" ? -pointsValue : pointsValue;
+    const numericAmount = Number(scoreAmount) || 0;
+    if (!numericAmount) return;
+
+    const delta = isSubtractMode ? -numericAmount : numericAmount;
     const container = getPlayersContainer(game);
 
     const sourcePlayers =
@@ -266,7 +273,7 @@ function GameFlowPlayerPage() {
       const id = typeof player === "string" ? `player-${index}` : player.id || `player-${index}`;
       const currentScore = typeof player === "string" ? 0 : player.score || 0;
 
-      if (id !== selectedPlayerId) return player;
+      if (id !== playerId) return player;
 
       if (typeof player === "string") {
         return {
@@ -395,67 +402,57 @@ function GameFlowPlayerPage() {
         />
       </div>
 
-      <div className="game-flow-player-scoring-dock">
-        <div className="game-flow-player-scoring-card">
-          <div className="game-flow-player-scoring-card__label">
-            Scoring
-          </div>
+      {isAnswerPage && (
+        <div className="game-flow-player-scoring-dock">
+          <div className="game-flow-player-scoring-simple">
+            <div className="game-flow-player-amount-row">
+              <label className="game-flow-player-amount-label">
+                Amount
+              </label>
+              <input
+                type="number"
+                value={scoreAmount}
+                onChange={(e) => setScoreAmount(e.target.value)}
+                className="game-flow-player-amount-input"
+              />
+              <label className="game-flow-player-subtract-toggle">
+                <input
+                  type="checkbox"
+                  checked={isSubtractMode}
+                  onChange={(e) => setIsSubtractMode(e.target.checked)}
+                />
+                Subtract
+              </label>
+            </div>
 
-          <div className="game-flow-player-player-pills">
-            {players.map((player, index) => (
-              <button
-                key={player.id}
-                type="button"
-                className={`game-flow-player-pill ${
-                  selectedPlayerId === player.id ? "game-flow-player-pill--active" : ""
-                }`}
-                onClick={() => setSelectedPlayerId(player.id)}
-              >
-                <span className="game-flow-player-pill__name">{player.name}</span>
-                <span className="game-flow-player-pill__score">{player.score}</span>
-              </button>
-            ))}
-          </div>
-
-          <div className="game-flow-player-score-actions">
-            <button
-              type="button"
-              className="game-flow-player-btn game-flow-player-btn--accent"
-              onClick={() => applyScore("add")}
-              disabled={!selectedPlayerId || !pointsValue || isSavingScore}
-            >
-              +{pointsValue} {game?.currency || "Points"}
-            </button>
-
-            <button
-              type="button"
-              className="game-flow-player-btn game-flow-player-btn--danger"
-              onClick={() => applyScore("subtract")}
-              disabled={!selectedPlayerId || !pointsValue || isSavingScore}
-            >
-              -{pointsValue} {game?.currency || "Points"}
-            </button>
-
-            <button
-              type="button"
-              className="game-flow-player-btn"
-              onClick={undoLastScore}
-              disabled={!lastScoreEvent || isSavingScore}
-            >
-              Undo
-            </button>
+            <div className="game-flow-player-player-buttons">
+              {players.map((player) => (
+                <button
+                  key={player.id}
+                  type="button"
+                  className="game-flow-player-player-btn"
+                  onClick={() => onPlayerScore(player.id)}
+                  disabled={isSavingScore}
+                >
+                  <span>{player.name}</span>
+                  <span className="game-flow-player-player-score">
+                    {player.score}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-        {!isAnswerPage && (
-          <button
-            type="button"
-            className="game-flow-player-answer-fab"
-            onClick={goToAnswerPage}
-          >
-            Answer
-          </button>
-        )}
-      </div>
+      )}
+      {!isAnswerPage && (
+        <button
+          type="button"
+          className="game-flow-player-answer-fab"
+          onClick={goToAnswerPage}
+        >
+          Answer
+        </button>
+      )}
     </div>
   );
 }
