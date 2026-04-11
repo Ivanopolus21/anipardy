@@ -23,7 +23,6 @@ function createEmptyMediaItem() {
     name: "",
     mimeType: "",
     alt: "",
-    previewUrl: "",
     wasOptimized: false,
     width: null,
     height: null,
@@ -38,7 +37,6 @@ function normalizeMediaItem(item = {}) {
     name: item.name || "",
     mimeType: item.mimeType || "",
     alt: item.alt || "",
-    previewUrl: "",
     wasOptimized: Boolean(item.wasOptimized),
     width: item.width ?? null,
     height: item.height ?? null,
@@ -239,6 +237,7 @@ function QuestionFlowEditorPage() {
     explanation: "",
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [mediaPreviews, setMediaPreviews] = useState({});
 
   useEffect(() => {
     async function loadGame() {
@@ -305,45 +304,37 @@ function QuestionFlowEditorPage() {
     const objectUrls = [];
 
     async function loadPreviewUrls() {
-      const itemsWithPreviews = await Promise.all(
-        draft.mediaItems.map(async (item) => {
-          if (!item.mediaId) {
-            return { ...item, previewUrl: "" };
-          }
+      if (!draft.mediaItems.length) {
+        setMediaPreviews({});
+        return;
+      }
 
-          const mediaRecord = await getMediaById(item.mediaId);
+      const nextPreviews = {};
 
-          if (!mediaRecord?.blob) {
-            return { ...item, previewUrl: "" };
-          }
+      for (const item of draft.mediaItems) {
+        if (!item.mediaId) continue;
 
-          const previewUrl = URL.createObjectURL(mediaRecord.blob);
-          objectUrls.push(previewUrl);
+        const mediaRecord = await getMediaById(item.mediaId);
 
-          return {
-            ...item,
-            previewUrl,
-          };
-        })
-      );
+        if (!mediaRecord?.blob) continue;
+
+        const previewUrl = URL.createObjectURL(mediaRecord.blob);
+        objectUrls.push(previewUrl);
+        nextPreviews[item.id] = previewUrl;
+      }
 
       if (!isCancelled) {
-        setDraft((current) => ({
-          ...current,
-          mediaItems: itemsWithPreviews,
-        }));
+        setMediaPreviews(nextPreviews);
       }
     }
 
-    if (draft.mediaItems.length > 0) {
-      loadPreviewUrls();
-    }
+    loadPreviewUrls();
 
     return () => {
       isCancelled = true;
       objectUrls.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, [activePageId, draft.mediaItems.length]);
+  }, [draft.mediaItems]);
 
   function updateDraftField(field, value) {
     setDraft((current) => ({
@@ -401,10 +392,6 @@ function QuestionFlowEditorPage() {
 
     try {
       const storedMedia = await createStoredMediaRecord(file);
-      const previewRecord = await getMediaById(storedMedia.mediaId);
-      const previewUrl = previewRecord?.blob
-        ? URL.createObjectURL(previewRecord.blob)
-        : "";
 
       setDraft((current) => ({
         ...current,
@@ -418,7 +405,6 @@ function QuestionFlowEditorPage() {
               wasOptimized: storedMedia.wasOptimized,
               width: storedMedia.width,
               height: storedMedia.height,
-              previewUrl,
             }
             : item
         ),
@@ -438,7 +424,7 @@ function QuestionFlowEditorPage() {
     const updatedPages = game.gameConfig.pages.map((page) => {
       if (page.id !== activePage.id) return page;
 
-      const sanitizedMediaItems = draft.mediaItems.map(({ previewUrl, ...item }) => item);
+      const sanitizedMediaItems = draft.mediaItems;
 
       const commonFields = {
         ...page,
@@ -483,6 +469,7 @@ function QuestionFlowEditorPage() {
 
   const mediaItem = draft.mediaItems[0] || null;
   const isAnswerPage = activePage.type === "answer";
+  const mediaPreviewUrl = mediaItem ? mediaPreviews[mediaItem.id] || "" : "";
 
   return (
     <section className="flow-editor-page">
@@ -636,21 +623,21 @@ function QuestionFlowEditorPage() {
                 </label>
               )}
 
-              {mediaItem.previewUrl && mediaItem.type === "image" && (
+              {mediaPreviewUrl && mediaItem.type === "image" && (
                 <div className="flow-editor-preview">
-                  <img src={mediaItem.previewUrl} alt={mediaItem.alt || ""} />
+                  <img src={mediaPreviewUrl} alt={mediaItem.alt || ""} />
                 </div>
               )}
 
-              {mediaItem.previewUrl && mediaItem.type === "audio" && (
+              {mediaPreviewUrl && mediaItem.type === "audio" && (
                 <div className="flow-editor-preview">
-                  <audio controls src={mediaItem.previewUrl} />
+                  <audio controls src={mediaPreviewUrl} />
                 </div>
               )}
 
-              {mediaItem.previewUrl && mediaItem.type === "video" && (
+              {mediaPreviewUrl && mediaItem.type === "video" && (
                 <div className="flow-editor-preview">
-                  <video controls src={mediaItem.previewUrl} />
+                  <video controls src={mediaPreviewUrl} />
                 </div>
               )}
             </div>
