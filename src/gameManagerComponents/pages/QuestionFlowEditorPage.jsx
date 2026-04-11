@@ -6,6 +6,7 @@ import {
   saveMedia,
   getMediaById,
 } from "../../db.js";
+import FlowPageRenderer from "../../FlowPageRenderer.jsx";
 import "../../index.css";
 
 function createEmptyTextBlock() {
@@ -235,9 +236,18 @@ function QuestionFlowEditorPage() {
     mediaItems: [],
     answer: "",
     explanation: "",
+    useCustomBackground: false,
+    backgroundMediaId: "",
+    backgroundName: "",
+    enableModifier: false,
+    modifierText: "",
+    enableTimer: false,
+    timerSeconds: 60,
   });
   const [isSaving, setIsSaving] = useState(false);
   const [mediaPreviews, setMediaPreviews] = useState({});
+  const [backgroundPreviewUrl, setBackgroundPreviewUrl] = useState("");
+  const [showAdvancedFeatures, setShowAdvancedFeatures] = useState(false);
 
   useEffect(() => {
     async function loadGame() {
@@ -296,6 +306,13 @@ function QuestionFlowEditorPage() {
       mediaItems: normalized.mediaItems,
       answer: activePage.answer || "",
       explanation: activePage.explanation || "",
+      useCustomBackground: Boolean(activePage.useCustomBackground),
+      backgroundMediaId: activePage.backgroundMediaId || "",
+      backgroundName: activePage.backgroundName || "",
+      enableModifier: Boolean(activePage.enableModifier),
+      modifierText: activePage.modifierText || "",
+      enableTimer: Boolean(activePage.enableTimer),
+      timerSeconds: activePage.timerSeconds ?? 60,
     });
   }, [activePage]);
 
@@ -315,7 +332,6 @@ function QuestionFlowEditorPage() {
         if (!item.mediaId) continue;
 
         const mediaRecord = await getMediaById(item.mediaId);
-
         if (!mediaRecord?.blob) continue;
 
         const previewUrl = URL.createObjectURL(mediaRecord.blob);
@@ -335,6 +351,40 @@ function QuestionFlowEditorPage() {
       objectUrls.forEach((url) => URL.revokeObjectURL(url));
     };
   }, [draft.mediaItems]);
+
+  useEffect(() => {
+    let isCancelled = false;
+    let objectUrl = "";
+
+    async function loadBackgroundPreview() {
+      if (!draft.useCustomBackground || !draft.backgroundMediaId) {
+        setBackgroundPreviewUrl("");
+        return;
+      }
+
+      const mediaRecord = await getMediaById(draft.backgroundMediaId);
+
+      if (!mediaRecord?.blob) {
+        setBackgroundPreviewUrl("");
+        return;
+      }
+
+      objectUrl = URL.createObjectURL(mediaRecord.blob);
+
+      if (!isCancelled) {
+        setBackgroundPreviewUrl(objectUrl);
+      }
+    }
+
+    loadBackgroundPreview();
+
+    return () => {
+      isCancelled = true;
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [draft.useCustomBackground, draft.backgroundMediaId]);
 
   function updateDraftField(field, value) {
     setDraft((current) => ({
@@ -414,6 +464,23 @@ function QuestionFlowEditorPage() {
     }
   }
 
+  async function handleBackgroundFileChange(file) {
+    if (!file) return;
+
+    try {
+      const storedMedia = await createStoredMediaRecord(file);
+
+      setDraft((current) => ({
+        ...current,
+        useCustomBackground: true,
+        backgroundMediaId: storedMedia.mediaId,
+        backgroundName: storedMedia.name,
+      }));
+    } catch (error) {
+      console.error("Failed to store background media:", error);
+    }
+  }
+
   async function handleSave(e) {
     e.preventDefault();
 
@@ -434,6 +501,13 @@ function QuestionFlowEditorPage() {
         textBlocks: draft.textBlocks,
         mediaItems: sanitizedMediaItems,
         text: draft.textBlocks?.[0]?.value || "",
+        useCustomBackground: draft.useCustomBackground,
+        backgroundMediaId: draft.useCustomBackground ? draft.backgroundMediaId : "",
+        backgroundName: draft.useCustomBackground ? draft.backgroundName : "",
+        enableModifier: draft.enableModifier,
+        modifierText: draft.enableModifier ? draft.modifierText : "",
+        enableTimer: draft.enableTimer,
+        timerSeconds: draft.enableTimer ? draft.timerSeconds || 60 : 60,
       };
 
       if (page.type === "answer") {
@@ -470,6 +544,9 @@ function QuestionFlowEditorPage() {
   const mediaItem = draft.mediaItems[0] || null;
   const isAnswerPage = activePage.type === "answer";
   const mediaPreviewUrl = mediaItem ? mediaPreviews[mediaItem.id] || "" : "";
+  const mediaPreviewMap = Object.fromEntries(
+    draft.mediaItems.map((item) => [item.id, mediaPreviews[item.id] || ""])
+  );
 
   return (
     <section className="flow-editor-page">
@@ -664,13 +741,148 @@ function QuestionFlowEditorPage() {
               </label>
             </div>
           )}
+          <div className="flow-editor-section">
+            <h3>Background</h3>
 
+            <label className="flow-editor-checkbox">
+              <input
+                type="checkbox"
+                checked={draft.useCustomBackground}
+                onChange={(e) =>
+                  updateDraftField("useCustomBackground", e.target.checked)
+                }
+              />
+              Use custom background
+            </label>
+
+            {draft.useCustomBackground ? (
+              <div className="flow-editor-stack">
+                <input
+                  type="file"
+                  accept="image/*,video/*"
+                  onChange={(e) => handleBackgroundFileChange(e.target.files?.[0])}
+                />
+
+                {draft.backgroundName ? (
+                  <div className="flow-editor-file-note">
+                    Background file: {draft.backgroundName}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="flow-editor-section">
+            <button
+              type="button"
+              className="flow-editor-advanced-toggle"
+              onClick={() => setShowAdvancedFeatures((current) => !current)}
+              aria-expanded={showAdvancedFeatures}
+            >
+              Advanced features
+            </button>
+
+            {showAdvancedFeatures ? (
+              <div className="flow-editor-advanced-panel">
+                <label className="flow-editor-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={draft.enableModifier}
+                    onChange={(e) =>
+                      setDraft((current) => ({
+                        ...current,
+                        enableModifier: e.target.checked,
+                      }))
+                    }
+                  />
+                  Enable modifier
+                </label>
+
+                {draft.enableModifier ? (
+                  <div>
+                    <label className="flow-editor-label">Modifier text</label>
+                    <input
+                      type="text"
+                      value={draft.modifierText}
+                      onChange={(e) => updateDraftField("modifierText", e.target.value)}
+                      placeholder="Example: X2 points"
+                    />
+                  </div>
+                ) : null}
+
+                <label className="flow-editor-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={draft.enableTimer}
+                    onChange={(e) =>
+                      setDraft((current) => ({
+                        ...current,
+                        enableTimer: e.target.checked,
+                        timerSeconds: e.target.checked ? 60 : current.timerSeconds,
+                      }))
+                    }
+                  />
+                  Enable 1 minute timer
+                </label>
+
+                {draft.enableTimer ? (
+                  <div>
+                    <label className="flow-editor-label">Timer length in seconds</label>
+                    <input
+                      type="number"
+                      min="5"
+                      max="600"
+                      value={draft.timerSeconds}
+                      onChange={(e) =>
+                        updateDraftField("timerSeconds", Number(e.target.value) || 60)
+                      }
+                    />
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
           <div className="flow-editor-footer">
             <button className="primary-btn" type="submit" disabled={isSaving}>
               {isSaving ? "Saving..." : "Save changes"}
             </button>
           </div>
         </form>
+        <div className="flow-editor-live-preview">
+          <div className="flow-editor-live-preview__header">
+            <h2>Game page preview</h2>
+            <p>This shows how the current page will look in the game.</p>
+          </div>
+          <a
+            href={`/game/${id}/flow/${flowId}/play`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Open gameplay view
+          </a>
+
+          <FlowPageRenderer
+            page={{
+              ...activePage,
+              layout: draft.layout,
+              textBlocks: draft.textBlocks,
+              mediaItems: draft.mediaItems,
+              answer: draft.answer,
+              explanation: draft.explanation,
+              useCustomBackground: draft.useCustomBackground,
+              backgroundMediaId: draft.backgroundMediaId,
+              enableModifier: draft.enableModifier,
+              modifierText: draft.modifierText,
+              enableTimer: draft.enableTimer,
+              timerSeconds: draft.timerSeconds,
+              type: activePage.type,
+            }}
+            pageTitle={effectiveTitle}
+            mediaPreviewMap={mediaPreviewMap}
+            backgroundPreviewUrl={backgroundPreviewUrl}
+            mode="preview"
+          />
+        </div>
       </div>
     </section>
   );
