@@ -847,7 +847,7 @@ function QuestionFlowEditorPage() {
                           checked={draft.isSecretModifier}
                           onChange={(e) => updateDraftField("isSecretModifier", e.target.checked)}
                         />
-                        <span>Secret modifier</span>
+                        <span>Make it "Secret modifier" (shown on Answer page only)</span>
                       </label>
                     </div>
                   ) : null}
