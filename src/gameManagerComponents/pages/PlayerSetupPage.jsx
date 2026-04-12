@@ -22,7 +22,13 @@ function PlayerSetupPage() {
             setGame(savedGame);
 
             if (savedGame.gameConfig?.players?.length > 0) {
-                setPlayers(savedGame.gameConfig.players);
+                setPlayers(
+                  savedGame.gameConfig.players.map((player, index) =>
+                    typeof player === "string"
+                      ? player
+                      : player.playerName || player.name || `Player ${index + 1}`
+                  )
+                );
             }
         }
 
@@ -50,7 +56,30 @@ function PlayerSetupPage() {
     async function handleSubmit(e) {
         e.preventDefault();
 
-        const cleanedPlayers = players.map((name) => name.trim()).filter(Boolean);
+        const existingPlayers = Array.isArray(game.gameConfig?.players)
+          ? game.gameConfig.players
+          : [];
+
+        const cleanedPlayers = players
+          .map((name) => name.trim())
+          .filter(Boolean)
+          .map((name, index) => {
+              const existingPlayer = existingPlayers[index];
+
+              return {
+                  id:
+                    typeof existingPlayer === "object" && existingPlayer?.id
+                      ? existingPlayer.id
+                      : crypto.randomUUID(),
+                  playerName: name,
+                  name,
+                  score:
+                    typeof existingPlayer === "object" && existingPlayer?.score !== undefined
+                      ? Number(existingPlayer.score || 0)
+                      : 0,
+                  order: index,
+              };
+          });
 
         if (cleanedPlayers.length < 1) return;
 

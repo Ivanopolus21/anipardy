@@ -70,6 +70,12 @@ function GameManagerPage() {
         return buildManagerItems(game?.gameConfig?.pages || []);
     }, [game]);
 
+    const configuredBoardPages = useMemo(() => {
+        return (game?.gameConfig?.pages || []).filter(
+          (page) => page.type === "board" && page.isConfigured
+        );
+    }, [game]);
+
     function openManagerItem(item) {
         if (!game) return;
 
@@ -138,11 +144,19 @@ function GameManagerPage() {
                   <h1>{game.name}</h1>
               </div>
 
-              <div className="manager-page__actions">
-                  <button onClick={() => navigate(`/game/${game.id}/setup`)}>
+              <div className="manager-page__actions ">
+                  <button className={"primary-btn"} onClick={() => navigate(`/game/${game.id}/setup`)}>
                       Edit players
                   </button>
-                  <button onClick={() => navigate(`/play/${game.id}`)}>
+                  <button
+                    className={"primary-btn"}
+                    onClick={() => {
+                        const firstBoard = configuredBoardPages[0];
+                        if (!firstBoard) return;
+                        navigate(`/play/${game.id}/board/${firstBoard.id}`);
+                    }}
+                    disabled={configuredBoardPages.length === 0}
+                  >
                       Play game
                   </button>
               </div>
@@ -162,8 +176,10 @@ function GameManagerPage() {
                   {game.gameConfig?.players?.length > 0 ? (
                     <ul>
                         {game.gameConfig.players.map((player, index) => (
-                          <li key={index}>
-                              {typeof player === "string" ? player : player.playerName}
+                          <li key={typeof player === "string" ? `${player}-${index}` : player.id || index}>
+                              {typeof player === "string"
+                                ? player
+                                : player.playerName || player.name || `Player ${index + 1}`}
                           </li>
                         ))}
                     </ul>
@@ -199,7 +215,7 @@ function GameManagerPage() {
                                 onClick={() => openManagerItem(item)}
                               >
                                   <div className="page-card__top">
-                                      <h3>{item.pages[0].name || "The Board"}</h3>
+                                      <h3>{item.pages[0].name || "The BoardPlayerPage"}</h3>
                                       <button
                                         type="button"
                                         className="page-card__delete-btn"

@@ -81,6 +81,10 @@ function GameFlowPlayerPage() {
     return flowPages.find((page) => page.type === "question-step") || null;
   }, [flowPages]);
 
+  const linkedBoardPageId = useMemo(() => {
+    return flowPages.find((page) => page.boardLink?.boardPageId)?.boardLink?.boardPageId || null;
+  }, [flowPages]);
+
   const backgroundSourcePage = useMemo(() => {
     if (!currentPage) return null;
 
@@ -408,9 +412,13 @@ function GameFlowPlayerPage() {
           <button
             type="button"
             className="game-flow-player-btn"
-            onClick={() => navigate(`/game/${id}`)}
+            onClick={() =>
+              linkedBoardPageId
+                ? navigate(`/play/${id}/board/${linkedBoardPageId}`)
+                : navigate(`/game/${id}`)
+            }
           >
-            Back
+            {linkedBoardPageId ? "Back to board" : "Back"}
           </button>
         </div>
 

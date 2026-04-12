@@ -184,8 +184,9 @@ function BoardSetupPage() {
           return {
             id: existingQuestion?.id || crypto.randomUUID(),
             row: rowIndex,
-            points: null,
-            flowId: null,
+            points: existingQuestion?.points ?? null,
+            flowId: existingQuestion?.flowId ?? null,
+            isCompleted: existingQuestion?.isCompleted ?? false,
           };
         }),
       }));
@@ -232,7 +233,7 @@ function BoardSetupPage() {
   return (
     <section className="board-setup-page">
       <form className="board-setup-card" onSubmit={handleSubmit}>
-        <h1>{boardPage.name || "Board setup"}</h1>
+        <h1>{boardPage.name || "BoardPlayerPage setup"}</h1>
         <p>Configure the board structure before filling in point values and question links.</p>
 
         <div className="board-setup-grid">
@@ -290,7 +291,7 @@ function BoardSetupPage() {
 
           {backgroundPreview && (
             <div className="board-upload-preview">
-              <img src={backgroundPreview} alt="Board background preview" />
+              <img src={backgroundPreview} alt="BoardPlayerPage background preview" />
             </div>
           )}
         </div>

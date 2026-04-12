@@ -299,42 +299,39 @@ function BoardEditorPage() {
       <div className="board-editor-overlay">
         <div className="board-editor-header">
           <div>
-            <h1>{boardPage.name || "Board"}</h1>
-            <p>Click a question cell to edit its points or open its linked flow.</p>
+            <h1>{game.name}</h1>
+            <p>
+              {boardPage.name ? `Editing board: ${boardPage.name}. ` : ""}
+              Click a question cell to edit its points or open its linked flow.
+            </p>
           </div>
 
-          {boardPages.length > 1 && (
-            <>
-              <button
-                className="secondary-btn"
-                onClick={() => previousBoard && navigate(`/game/${id}/board/${previousBoard.id}`)}
-                disabled={!previousBoard}
-              >
-                Previous board
-              </button>
-
-              <button
-                className="secondary-btn"
-                onClick={() => nextBoard && navigate(`/game/${id}/board/${nextBoard.id}`)}
-                disabled={!nextBoard}
-              >
-                Next board
-              </button>
-            </>
-          )}
-
           <div className="manager-page__actions">
-            <button
-              className="secondary-btn"
-              onClick={() => navigate(`/game/${id}/board/${pageId}/setup`)}
-            >
-              Reconfigure board
-            </button>
+            {boardPages.length > 1 && (
+              <>
+                <button
+                  className="secondary-btn"
+                  onClick={() => previousBoard && navigate(`/game/${id}/board/${previousBoard.id}`)}
+                  disabled={!previousBoard}
+                >
+                  Previous board
+                </button>
+
+                <button
+                  className="secondary-btn"
+                  onClick={() => nextBoard && navigate(`/game/${id}/board/${nextBoard.id}`)}
+                  disabled={!nextBoard}
+                >
+                  Next board
+                </button>
+              </>
+            )}
+
             <button
               className="secondary-btn"
               onClick={() => navigate(`/game/${id}`)}
             >
-              Back to game
+              Back to manager
             </button>
           </div>
         </div>
@@ -361,25 +358,34 @@ function BoardEditorPage() {
                     ? getFlowAutoTitle(flowPages, currency)
                     : "No flow yet";
 
-                  const isConfigured =
-                    question?.points !== null ||
-                    question?.flowId;
+                  const hasPoints =
+                    question?.points !== null && question?.points !== undefined;
+
+                  const hasLinkedFlow = flowPages.length > 0;
+
+                  const cellStatus = hasLinkedFlow
+                    ? "linked"
+                    : hasPoints
+                      ? "partial"
+                      : "unconfigured";
 
                   return (
                     <button
                       key={question?.id || `${category.id}-${rowIndex}`}
-                      className={`board-cell ${isConfigured ? "board-cell--configured" : ""}`}
+                      className={`board-cell board-cell--${cellStatus}`}
                       type="button"
                       onClick={() => openCellEditor(category.id, rowIndex)}
                     >
                       <span className="board-cell__main">
-                        {question?.points !== null && question?.points !== undefined
-                          ? `${question.points} ${currency}`
-                          : `Question ${rowIndex + 1}`}
+                        {hasPoints ? `${question.points} ${currency}` : `Question ${rowIndex + 1}`}
                       </span>
 
                       <span className="board-cell__sub">
-                        {flowTitle}
+                        {cellStatus === "linked"
+                          ? "Linked"
+                          : cellStatus === "partial"
+                            ? "Points set, flow missing"
+                            : "Not configured"}
                       </span>
                     </button>
                   );

@@ -9,6 +9,7 @@ import BoardSetupPage from "./gameManagerComponents/pages/BoardSetupPage.jsx";
 import BoardEditorPage from "./gameManagerComponents/pages/BoardEditorPage.jsx";
 import QuestionFlowEditorPage from "./gameManagerComponents/pages/QuestionFlowEditorPage.jsx";
 import GameFlowPlayerPage from "../src/gameComponents/GameFlowPlayerPage.jsx";
+import BoardPlayerPage from "./gameComponents/BoardPlayerPage.jsx";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
       <Route path="/game/:id/board/:pageId" element={<BoardEditorPage />} />
       <Route path="/game/:id/flow/:flowId" element={<QuestionFlowEditorPage />} />
       <Route path="/game/:id/flow/:flowId/play" element={<GameFlowPlayerPage />} />
+      <Route path="/play/:id/board/:pageId" element={<BoardPlayerPage />} />
     </Routes>
   );
 }
