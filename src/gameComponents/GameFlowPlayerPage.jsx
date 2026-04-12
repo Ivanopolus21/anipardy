@@ -77,6 +77,27 @@ function GameFlowPlayerPage() {
     return flowPages.find((page) => page.type === "answer") || null;
   }, [flowPages]);
 
+  const backgroundSourcePage = useMemo(() => {
+    if (!currentPage) return null;
+
+    if (currentPage.useCustomBackground && currentPage.backgroundMediaId) {
+      return currentPage;
+    }
+
+    if (currentPage.type === "answer") {
+      return (
+        flowPages.find(
+          (page) =>
+            page.type === "question-step" &&
+            page.useCustomBackground &&
+            page.backgroundMediaId
+        ) || null
+      );
+    }
+
+    return null;
+  }, [currentPage, flowPages]);
+
   const pageTitle = useMemo(() => {
     if (!currentPage) return "";
 
@@ -114,6 +135,27 @@ function GameFlowPlayerPage() {
       };
     });
   }, [game]);
+
+  const inheritedBackgroundPage = useMemo(() => {
+    if (!currentPage) return null;
+
+    if (currentPage.useCustomBackground && currentPage.backgroundMediaId) {
+      return currentPage;
+    }
+
+    if (currentPage.type === "answer") {
+      return (
+        flowPages.find(
+          (page) =>
+            page.type === "question-step" &&
+            page.useCustomBackground &&
+            page.backgroundMediaId
+        ) || null
+      );
+    }
+
+    return null;
+  }, [currentPage, flowPages]);
 
   const pointsValue = useMemo(() => {
     if (!currentPage) return 0;
@@ -167,51 +209,15 @@ function GameFlowPlayerPage() {
 
   useEffect(() => {
     let isCancelled = false;
-    const objectUrls = [];
-
-    async function loadMediaPreviews() {
-      if (!currentPage?.mediaItems?.length) {
-        setMediaPreviewMap({});
-        return;
-      }
-
-      const nextMap = {};
-
-      for (const item of currentPage.mediaItems) {
-        if (!item.mediaId) continue;
-
-        const mediaRecord = await getMediaById(item.mediaId);
-        if (!mediaRecord?.blob) continue;
-
-        const previewUrl = URL.createObjectURL(mediaRecord.blob);
-        objectUrls.push(previewUrl);
-        nextMap[item.id] = previewUrl;
-      }
-
-      if (!isCancelled) {
-        setMediaPreviewMap(nextMap);
-      }
-    }
-
-    loadMediaPreviews();
-
-    return () => {
-      isCancelled = true;
-      objectUrls.forEach((url) => URL.revokeObjectURL(url));
-    };
-  }, [currentPage]);
-
-  useEffect(() => {
-    let isCancelled = false;
     let objectUrl = "";
 
     async function loadBackgroundPreview() {
-      if (!currentPage?.useCustomBackground || !currentPage?.backgroundMediaId) {
+      if (!backgroundSourcePage?.backgroundMediaId) {
         setBackgroundPreviewUrl("");
         return;
       }
 
-      const mediaRecord = await getMediaById(currentPage.backgroundMediaId);
+      const mediaRecord = await getMediaById(backgroundSourcePage.backgroundMediaId);
       if (!mediaRecord?.blob) {
         setBackgroundPreviewUrl("");
         return;
@@ -232,7 +238,7 @@ function GameFlowPlayerPage() {
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [currentPage]);
+  }, [backgroundSourcePage]);
 
   function startTimer() {
     if (!currentPage?.enableTimer || timerRunning || timeLeft <= 0) return;
@@ -394,6 +400,9 @@ function GameFlowPlayerPage() {
           page={{
             ...currentPage,
             timerSeconds: timeLeft,
+            useCustomBackground: Boolean(backgroundSourcePage?.backgroundMediaId),
+            backgroundMediaId: backgroundSourcePage?.backgroundMediaId || "",
+            backgroundName: backgroundSourcePage?.backgroundName || currentPage.backgroundName || "",
           }}
           pageTitle={pageTitle}
           mediaPreviewMap={mediaPreviewMap}
