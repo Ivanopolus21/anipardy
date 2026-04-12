@@ -89,7 +89,12 @@ function GameManagerPage() {
             return;
         }
 
-        navigate(`/game/${game.id}/page/${item.pages[0].id}`);
+        if (item.itemType === "supergame") {
+            navigate(`/game/${game.id}/supergame/${item.pages[0].id}`);
+            return;
+        }
+
+        navigate(`/game/${game.id}`);
     }
 
     async function removeManagerItem(item, event) {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import {useLocation, useNavigate, useParams} from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   getGameById,
   updateGame,
@@ -47,10 +47,8 @@ function normalizeMediaItem(item = {}) {
 function readFileAsDataURL(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-
     reader.onload = () => resolve(reader.result);
     reader.onerror = () => reject(new Error("Failed to read file"));
-
     reader.readAsDataURL(file);
   });
 }
@@ -58,10 +56,8 @@ function readFileAsDataURL(file) {
 function loadImageFromDataURL(dataUrl) {
   return new Promise((resolve, reject) => {
     const img = new Image();
-
     img.onload = () => resolve(img);
     img.onerror = () => reject(new Error("Failed to load image"));
-
     img.src = dataUrl;
   });
 }
@@ -200,38 +196,11 @@ function normalizePageContent(page) {
   };
 }
 
-function getStepLabel(page, index) {
-  if (page.type === "answer") return "Answer";
-  return `Question ${index + 1}`;
-}
-
-function getAutoTitle(flowPages, game) {
-  const linkedPage = flowPages.find(
-    (page) =>
-      page.boardLink?.categoryName &&
-      page.boardLink?.clueValue !== null &&
-      page.boardLink?.clueValue !== undefined
-  );
-
-  if (!linkedPage) return "Unlinked flow";
-
-  const categoryName = linkedPage.boardLink.categoryName || "Category";
-  const clueValue = linkedPage.boardLink.clueValue ?? "?";
-  const currency = game?.currency || "Points";
-
-  return `${categoryName} - ${clueValue} ${currency}`;
-}
-
-function QuestionFlowEditorPage() {
-  const { id, flowId } = useParams();
+function SupergameEditorPage() {
+  const { id, pageId } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
-  const returnTo = location.state?.returnTo || `/game/${id}`;
-  const hasBoardReturn = Boolean(location.state?.returnTo);
-  const backLabel = hasBoardReturn ? "Back to board" : "Back to game manager";
 
   const [game, setGame] = useState(null);
-  const [activePageId, setActivePageId] = useState("");
   const [draft, setDraft] = useState({
     titleMode: "auto",
     customTitle: "",
@@ -241,16 +210,10 @@ function QuestionFlowEditorPage() {
     useCustomBackground: false,
     backgroundMediaId: "",
     backgroundName: "",
-    enableModifier: false,
-    modifierText: "",
-    isSecretModifier: false,
-    enableTimer: false,
-    timerSeconds: 60,
   });
   const [isSaving, setIsSaving] = useState(false);
   const [mediaPreviews, setMediaPreviews] = useState({});
   const [backgroundPreviewUrl, setBackgroundPreviewUrl] = useState("");
-  const [showAdvancedFeatures, setShowAdvancedFeatures] = useState(false);
 
   useEffect(() => {
     async function loadGame() {
@@ -261,108 +224,51 @@ function QuestionFlowEditorPage() {
         return;
       }
 
-      const flowPages = (savedGame.gameConfig?.pages || [])
-        .filter((page) => page.flowId === flowId)
-        .sort((a, b) => (a.order || 0) - (b.order || 0));
+      const supergamePage = (savedGame.gameConfig?.pages || []).find(
+        (page) => page.id === pageId && page.type === "supergame"
+      );
 
-      if (flowPages.length === 0) {
+      if (!supergamePage) {
         navigate(`/game/${id}`);
         return;
       }
 
       setGame(savedGame);
-      setActivePageId(flowPages[0].id);
     }
 
     loadGame();
-  }, [id, flowId, navigate]);
+  }, [id, pageId, navigate]);
 
-  const flowPages = useMemo(() => {
-    return (game?.gameConfig?.pages || [])
-      .filter((page) => page.flowId === flowId)
-      .sort((a, b) => (a.order || 0) - (b.order || 0));
-  }, [game, flowId]);
-
-  const activePage = useMemo(() => {
-    return flowPages.find((page) => page.id === activePageId) || null;
-  }, [flowPages, activePageId]);
-
-  const linkedBoardPageId = useMemo(() => {
-    return flowPages.find((page) => page.boardLink?.boardPageId)?.boardLink?.boardPageId || null;
-  }, [flowPages]);
-
-  const fallbackBackgroundPage = useMemo(() => {
-    if (!activePage || activePage.type !== "answer") return null;
-
+  const page = useMemo(() => {
     return (
-      flowPages.find(
-        (page) =>
-          page.type === "question-step" &&
-          page.useCustomBackground &&
-          page.backgroundMediaId
+      (game?.gameConfig?.pages || []).find(
+        (entry) => entry.id === pageId && entry.type === "supergame"
       ) || null
     );
-  }, [activePage, flowPages]);
+  }, [game, pageId]);
 
-  const effectiveBackgroundMediaId = useMemo(() => {
-    if (draft.useCustomBackground && draft.backgroundMediaId) {
-      return draft.backgroundMediaId;
-    }
-
-    return fallbackBackgroundPage?.backgroundMediaId || "";
-  }, [draft.useCustomBackground, draft.backgroundMediaId, fallbackBackgroundPage]);
-
-  const autoTitle = useMemo(() => {
-    return getAutoTitle(flowPages, game);
-  }, [flowPages, game]);
-
+  const autoTitle = page?.name || "Supergame";
   const effectiveTitle =
     draft.titleMode === "custom" && draft.customTitle.trim()
       ? draft.customTitle.trim()
       : autoTitle;
 
   useEffect(() => {
-    if (!activePage) return;
+    if (!page) return;
 
-    const normalized = normalizePageContent(activePage);
-
-    const inheritedBackground =
-      activePage.type === "answer" &&
-      !activePage.useCustomBackground &&
-      fallbackBackgroundPage
-        ? {
-          useCustomBackground: true,
-          backgroundMediaId: fallbackBackgroundPage.backgroundMediaId || "",
-          backgroundName: fallbackBackgroundPage.backgroundName || "",
-        }
-        : {
-          useCustomBackground: Boolean(activePage.useCustomBackground),
-          backgroundMediaId: activePage.backgroundMediaId || "",
-          backgroundName: activePage.backgroundName || "",
-        };
+    const normalized = normalizePageContent(page);
 
     setDraft({
-      titleMode: activePage.titleMode || "auto",
-      customTitle: activePage.customTitle || "",
+      titleMode: page.titleMode || "auto",
+      customTitle: page.customTitle || "",
       layout: normalized.layout,
       textBlocks: normalized.textBlocks,
       mediaItems: normalized.mediaItems,
-      useCustomBackground: inheritedBackground.useCustomBackground,
-      backgroundMediaId: inheritedBackground.backgroundMediaId,
-      backgroundName: inheritedBackground.backgroundName,
-      enableModifier: Boolean(activePage.enableModifier),
-      modifierText: activePage.modifierText || "",
-      isSecretModifier: Boolean(activePage.isSecretModifier),
-      enableTimer: Boolean(activePage.enableTimer),
-      timerSeconds: activePage.timerSeconds ?? 60,
+      useCustomBackground: Boolean(page.useCustomBackground),
+      backgroundMediaId: page.backgroundMediaId || "",
+      backgroundName: page.backgroundName || "",
     });
-  }, [activePage, fallbackBackgroundPage]);
-
-  useEffect(() => {
-    if (activePage?.type === "answer") {
-      setShowAdvancedFeatures(false);
-    }
-  }, [activePage]);
+  }, [page]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -405,12 +311,12 @@ function QuestionFlowEditorPage() {
     let objectUrl = "";
 
     async function loadBackgroundPreview() {
-      if (!effectiveBackgroundMediaId) {
+      if (!draft.useCustomBackground || !draft.backgroundMediaId) {
         setBackgroundPreviewUrl("");
         return;
       }
 
-      const mediaRecord = await getMediaById(effectiveBackgroundMediaId);
+      const mediaRecord = await getMediaById(draft.backgroundMediaId);
       if (!mediaRecord?.blob) {
         setBackgroundPreviewUrl("");
         return;
@@ -431,7 +337,7 @@ function QuestionFlowEditorPage() {
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [effectiveBackgroundMediaId]);
+  }, [draft.useCustomBackground, draft.backgroundMediaId]);
 
   function updateDraftField(field, value) {
     setDraft((current) => ({
@@ -449,17 +355,25 @@ function QuestionFlowEditorPage() {
 
       if (nextLayout === "text-only") {
         next.textBlocks =
-          current.textBlocks.length > 0 ? [current.textBlocks[0]] : [createEmptyTextBlock()];
+          current.textBlocks.length > 0
+            ? [current.textBlocks[0]]
+            : [createEmptyTextBlock()];
         next.mediaItems = [];
       } else if (nextLayout === "media-only") {
         next.textBlocks = [];
         next.mediaItems =
-          current.mediaItems.length > 0 ? [current.mediaItems[0]] : [createEmptyMediaItem()];
+          current.mediaItems.length > 0
+            ? [current.mediaItems[0]]
+            : [createEmptyMediaItem()];
       } else {
         next.textBlocks =
-          current.textBlocks.length > 0 ? [current.textBlocks[0]] : [createEmptyTextBlock()];
+          current.textBlocks.length > 0
+            ? [current.textBlocks[0]]
+            : [createEmptyTextBlock()];
         next.mediaItems =
-          current.mediaItems.length > 0 ? [current.mediaItems[0]] : [createEmptyMediaItem()];
+          current.mediaItems.length > 0
+            ? [current.mediaItems[0]]
+            : [createEmptyMediaItem()];
       }
 
       return next;
@@ -531,43 +445,25 @@ function QuestionFlowEditorPage() {
   async function handleSave(e) {
     e.preventDefault();
 
-    if (!game || !activePage || isSaving) return;
+    if (!game || !page || isSaving) return;
 
     setIsSaving(true);
 
-    const updatedPages = game.gameConfig.pages.map((page) => {
-      if (page.id !== activePage.id) return page;
+    const updatedPages = game.gameConfig.pages.map((entry) => {
+      if (entry.id !== page.id) return entry;
 
-      const sanitizedMediaItems = draft.mediaItems;
-
-      const commonFields = {
-        ...page,
+      return {
+        ...entry,
         titleMode: draft.titleMode,
         customTitle: draft.titleMode === "custom" ? draft.customTitle : "",
         layout: draft.layout,
         textBlocks: draft.textBlocks,
-        mediaItems: sanitizedMediaItems,
+        mediaItems: draft.mediaItems,
         text: draft.textBlocks?.[0]?.value || "",
         useCustomBackground: draft.useCustomBackground,
         backgroundMediaId: draft.useCustomBackground ? draft.backgroundMediaId : "",
         backgroundName: draft.useCustomBackground ? draft.backgroundName : "",
-        enableModifier: page.type === "question-step" ? draft.enableModifier : false,
-        modifierText:
-          page.type === "question-step" && draft.enableModifier
-            ? draft.modifierText
-            : "",
-        isSecretModifier:
-          page.type === "question-step" && draft.enableModifier
-            ? Boolean(draft.isSecretModifier)
-            : false,
-        enableTimer: page.type === "question-step" ? draft.enableTimer : false,
-        timerSeconds:
-          page.type === "question-step" && draft.enableTimer
-            ? draft.timerSeconds || 60
-            : 60,
       };
-
-      return commonFields;
     });
 
     const updatedGame = {
@@ -584,15 +480,9 @@ function QuestionFlowEditorPage() {
     setIsSaving(false);
   }
 
-  if (!game || !activePage) return <p>Loading...</p>;
-
-  const questionPagesCount = flowPages.filter(
-    (page) => page.type === "question-step"
-  ).length;
+  if (!game || !page) return <p>Loading...</p>;
 
   const mediaItem = draft.mediaItems[0] || null;
-  const isAnswerPage = activePage.type === "answer";
-  const isQuestionPage = activePage.type === "question-step";
   const mediaPreviewUrl = mediaItem ? mediaPreviews[mediaItem.id] || "" : "";
   const mediaPreviewMap = Object.fromEntries(
     draft.mediaItems.map((item) => [item.id, mediaPreviews[item.id] || ""])
@@ -603,39 +493,19 @@ function QuestionFlowEditorPage() {
       <div className="flow-editor-shell">
         <div className="flow-editor-header">
           <div>
-            <h1>{autoTitle}</h1>
-            <p>
-              Editing a flow with {questionPagesCount} question page
-              {questionPagesCount !== 1 ? "s" : ""} and 1 answer page in {game.name}.
-            </p>
+            <h1>{page.name || "Supergame"}</h1>
+            <p>Edit the final supergame page for {game.name}.</p>
           </div>
 
           <div className="flow-editor-actions">
             <button
               className="secondary-btn"
               type="button"
-              onClick={() => navigate(returnTo)}
+              onClick={() => navigate(`/game/${id}`)}
             >
-              {backLabel}
+              Back to manager
             </button>
           </div>
-        </div>
-
-        <div className="flow-editor-tabs" role="tablist" aria-label="Flow steps">
-          {flowPages.map((page, index) => (
-            <button
-              key={page.id}
-              type="button"
-              role="tab"
-              aria-selected={page.id === activePageId}
-              className={`flow-editor-tab ${
-                page.id === activePageId ? "flow-editor-tab--active" : ""
-              }`}
-              onClick={() => setActivePageId(page.id)}
-            >
-              {getStepLabel(page, index)}
-            </button>
-          ))}
         </div>
 
         <div className="flow-editor-panels">
@@ -648,7 +518,7 @@ function QuestionFlowEditorPage() {
               <div className="flow-editor-title-box">
                 <div className="flow-editor-title-preview">{effectiveTitle}</div>
                 <p className="flow-editor-title-help">
-                  This is the title players will see on this page.
+                  This is the title players will see on the supergame page.
                 </p>
               </div>
             </div>
@@ -691,17 +561,13 @@ function QuestionFlowEditorPage() {
             {(draft.layout === "text-only" || draft.layout === "text-media") && (
               <div className="flow-editor-fields">
                 <label className="flow-editor-field">
-                  <span>{isAnswerPage ? "Main text" : "Question text"}</span>
+                  <span>Main text</span>
                   <textarea
                     value={draft.textBlocks[0]?.value || ""}
                     onChange={(e) =>
                       updateTextBlock(draft.textBlocks[0].id, e.target.value)
                     }
-                    placeholder={
-                      isAnswerPage
-                        ? "Write the main answer-page text"
-                        : "Write the question, clue, or prompt shown to players"
-                    }
+                    placeholder="Write the final supergame prompt, rules, or intro"
                   />
                 </label>
               </div>
@@ -736,13 +602,13 @@ function QuestionFlowEditorPage() {
                   />
                 </label>
 
-                {mediaItem.name && (
+                {mediaItem.name ? (
                   <div className="flow-editor-file-note">
                     Selected file: {mediaItem.name}
                   </div>
-                )}
+                ) : null}
 
-                {mediaItem.type === "image" && (
+                {mediaItem.type === "image" ? (
                   <label className="flow-editor-field">
                     <span>Alt text</span>
                     <input
@@ -752,25 +618,25 @@ function QuestionFlowEditorPage() {
                       placeholder="Describe the image briefly"
                     />
                   </label>
-                )}
+                ) : null}
 
-                {mediaPreviewUrl && mediaItem.type === "image" && (
+                {mediaPreviewUrl && mediaItem.type === "image" ? (
                   <div className="flow-editor-preview">
                     <img src={mediaPreviewUrl} alt={mediaItem.alt || ""} />
                   </div>
-                )}
+                ) : null}
 
-                {mediaPreviewUrl && mediaItem.type === "audio" && (
+                {mediaPreviewUrl && mediaItem.type === "audio" ? (
                   <div className="flow-editor-preview">
                     <audio controls src={mediaPreviewUrl} />
                   </div>
-                )}
+                ) : null}
 
-                {mediaPreviewUrl && mediaItem.type === "video" && (
+                {mediaPreviewUrl && mediaItem.type === "video" ? (
                   <div className="flow-editor-preview">
                     <video controls src={mediaPreviewUrl} />
                   </div>
-                )}
+                ) : null}
               </div>
             )}
 
@@ -785,7 +651,7 @@ function QuestionFlowEditorPage() {
                     updateDraftField("useCustomBackground", e.target.checked)
                   }
                 />
-                Use custom background
+                <span>Use custom background</span>
               </label>
 
               {draft.useCustomBackground ? (
@@ -795,100 +661,10 @@ function QuestionFlowEditorPage() {
                     accept="image/*,video/*"
                     onChange={(e) => handleBackgroundFileChange(e.target.files?.[0])}
                   />
-
-                  {/*{draft.backgroundName ? (*/}
-                  {/*  <div className="flow-editor-file-note">*/}
-                  {/*    Background file: {draft.backgroundName}*/}
-                  {/*  </div>*/}
-                  {/*) : null}*/}
                 </div>
               ) : null}
             </div>
 
-            {isQuestionPage && (
-            <div className="flow-editor-section">
-              <button
-                type="button"
-                className="flow-editor-advanced-toggle"
-                onClick={() => setShowAdvancedFeatures((current) => !current)}
-                aria-expanded={showAdvancedFeatures}
-              >
-                Advanced features
-              </button>
-
-              {showAdvancedFeatures ? (
-                <div className="flow-editor-advanced-panel">
-                  <label className="flow-editor-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={draft.enableModifier}
-                      onChange={(e) =>
-                        setDraft((current) => ({
-                          ...current,
-                          enableModifier: e.target.checked,
-                          isSecretModifier: e.target.checked ? current.isSecretModifier : false,
-                        }))
-                      }
-                    />
-                    <span>Enable modifier</span>
-                  </label>
-
-                  {draft.enableModifier ? (
-                    <div className="flow-editor-suboption-group">
-                      <div>
-                        <label className="flow-editor-label">Modifier text</label>
-                        <input
-                          type="text"
-                          value={draft.modifierText}
-                          onChange={(e) => updateDraftField("modifierText", e.target.value)}
-                          placeholder="Example: X2 points"
-                        />
-                      </div>
-
-                      <label className="flow-editor-checkbox flow-editor-checkbox--nested">
-                        <input
-                          type="checkbox"
-                          checked={draft.isSecretModifier}
-                          onChange={(e) => updateDraftField("isSecretModifier", e.target.checked)}
-                        />
-                        <span>Make it "Secret modifier" (shown on Answer page only)</span>
-                      </label>
-                    </div>
-                  ) : null}
-
-                  <label className="flow-editor-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={draft.enableTimer}
-                      onChange={(e) =>
-                        setDraft((current) => ({
-                          ...current,
-                          enableTimer: e.target.checked,
-                          timerSeconds: e.target.checked ? 60 : current.timerSeconds,
-                        }))
-                      }
-                    />
-                    <span>Enable timer</span>
-                  </label>
-
-                  {draft.enableTimer ? (
-                    <div>
-                      <label className="flow-editor-label">Timer length in seconds</label>
-                      <input
-                        type="number"
-                        min="5"
-                        max="600"
-                        value={draft.timerSeconds}
-                        onChange={(e) =>
-                          updateDraftField("timerSeconds", Number(e.target.value) || 60)
-                        }
-                      />
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-            )}
             <div className="flow-editor-footer">
               <button className="primary-btn" type="submit" disabled={isSaving}>
                 {isSaving ? "Saving..." : "Save changes"}
@@ -900,17 +676,17 @@ function QuestionFlowEditorPage() {
             <div className="flow-editor-panel__header flow-editor-live-preview__header">
               <div>
                 <h2>Page preview</h2>
-                <p>This shows how the current page will look in the game.</p>
+                <p>This shows how the supergame page will look in the game.</p>
               </div>
 
               <button
                 type="button"
                 className="flow-editor-link-btn"
                 onClick={() =>
-                  navigate(`/game/${id}/flow/${flowId}/play`, {
+                  navigate(`/play/${id}/supergame/${pageId}`, {
                     state: {
                       fromEditor: true,
-                      returnTo,
+                      returnTo: `/game/${id}/supergame/${pageId}`,
                     },
                   })
                 }
@@ -922,18 +698,13 @@ function QuestionFlowEditorPage() {
             <div className="flow-editor-live-preview__frame">
               <FlowPageRenderer
                 page={{
-                  ...activePage,
+                  ...page,
                   layout: draft.layout,
                   textBlocks: draft.textBlocks,
                   mediaItems: draft.mediaItems,
                   useCustomBackground: draft.useCustomBackground,
                   backgroundMediaId: draft.backgroundMediaId,
-                  enableModifier: draft.enableModifier,
-                  modifierText: draft.modifierText,
-                  isSecretModifier: draft.isSecretModifier,
-                  enableTimer: draft.enableTimer,
-                  timerSeconds: draft.timerSeconds,
-                  type: activePage.type,
+                  type: "supergame",
                 }}
                 pageTitle={effectiveTitle}
                 mediaPreviewMap={mediaPreviewMap}
@@ -948,4 +719,4 @@ function QuestionFlowEditorPage() {
   );
 }
 
-export default QuestionFlowEditorPage;
+export default SupergameEditorPage;

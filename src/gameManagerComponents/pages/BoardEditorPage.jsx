@@ -195,7 +195,11 @@ function BoardEditorPage() {
       : [];
 
     if (existingFlowPages.length > 0) {
-      navigate(`/game/${id}/flow/${question.flowId}`);
+      navigate(`/game/${id}/flow/${question.flowId}`, {
+        state: {
+          returnTo: `/game/${id}/board/${pageId}`,
+        },
+      });
       return;
     }
 
@@ -277,7 +281,11 @@ function BoardEditorPage() {
 
     await updateGame(updatedGame);
     setGame(updatedGame);
-    navigate(`/game/${id}/flow/${flowId}`);
+    navigate(`/game/${id}/flow/${flowId}`, {
+      state: {
+        returnTo: `/game/${id}/board/${pageId}`,
+      },
+    });
   }
 
   if (!game || !boardPage) return <p>Loading...</p>;
