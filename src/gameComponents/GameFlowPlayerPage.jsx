@@ -77,6 +77,10 @@ function GameFlowPlayerPage() {
     return flowPages.find((page) => page.type === "answer") || null;
   }, [flowPages]);
 
+  const firstQuestionPage = useMemo(() => {
+    return flowPages.find((page) => page.type === "question-step") || null;
+  }, [flowPages]);
+
   const backgroundSourcePage = useMemo(() => {
     if (!currentPage) return null;
 
@@ -291,6 +295,11 @@ function GameFlowPlayerPage() {
     setCurrentPageId(answerPage.id);
   }
 
+  function goToQuestionPage() {
+    if (!firstQuestionPage) return;
+    setCurrentPageId(firstQuestionPage.id);
+  }
+
   function getPlayersContainer(gameState) {
     if (Array.isArray(gameState?.gameConfig?.players)) return "gameConfig.players";
     if (Array.isArray(gameState?.players)) return "players";
@@ -489,13 +498,21 @@ function GameFlowPlayerPage() {
           </div>
         </div>
       )}
-      {!isAnswerPage && (
+      {!isAnswerPage ? (
         <button
           type="button"
           className="game-flow-player-answer-fab"
           onClick={goToAnswerPage}
         >
           Answer
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="game-flow-player-question-fab"
+          onClick={goToQuestionPage}
+        >
+          Question
         </button>
       )}
     </div>

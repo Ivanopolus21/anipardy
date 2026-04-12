@@ -1614,6 +1614,22 @@ textarea {
   box-shadow: 0 18px 40px rgba(41, 58, 140, 0.42);
 }
 
+.game-flow-player-question-fab {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  z-index: 40;
+  pointer-events: auto;
+  min-height: 54px;
+  padding: 0 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: linear-gradient(135deg, #8b7bff, #6aa2ff);
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 18px 40px rgba(41, 58, 140, 0.42);
+}
+
 .game-flow-player-answer-fab:hover {
   transform: translateY(-1px);
   filter: brightness(1.04);
