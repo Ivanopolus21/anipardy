@@ -50,6 +50,12 @@ function BoardPlayerPage() {
         );
     }, [game]);
 
+    const hasCompletedQuestions = useMemo(() => {
+        return (boardPage?.categories || []).some((category) =>
+          (category.questions || []).some((question) => question?.isCompleted)
+        );
+    }, [boardPage]);
+
     const flowMap = useMemo(() => {
         const pages = game?.gameConfig?.pages || [];
         const grouped = new Map();
@@ -159,6 +165,43 @@ function BoardPlayerPage() {
         }
     }
 
+    async function resetBoard() {
+        if (!game || !boardPage) return;
+
+        const confirmed = window.confirm(
+          "Reset this board and make all its cells playable again?"
+        );
+
+        if (!confirmed) return;
+
+        const updatedPages = (game.gameConfig?.pages || []).map((page) => {
+            if (page.id !== boardPage.id) return page;
+
+            return {
+                ...page,
+                categories: (page.categories || []).map((category) => ({
+                    ...category,
+                    questions: (category.questions || []).map((question) => ({
+                        ...question,
+                        isCompleted: false,
+                    })),
+                })),
+            };
+        });
+
+        const updatedGame = {
+            ...game,
+            gameConfig: {
+                ...game.gameConfig,
+                pages: updatedPages,
+            },
+            updatedAt: Date.now(),
+        };
+
+        setGame(updatedGame);
+        await updateGame(updatedGame);
+    }
+
     if (!game || !boardPage) {
         return <p>Loading...</p>;
     }
@@ -212,6 +255,12 @@ function BoardPlayerPage() {
                             {currentBoardIndex + 1} of {boardPages.length}
                         </div>
                       ) : null}
+
+                      {hasCompletedQuestions && (
+                        <button className="secondary-btn" onClick={resetBoard}>
+                            Reset board
+                        </button>
+                      )}
 
                       <button
                         className="secondary-btn"
