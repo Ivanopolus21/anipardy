@@ -981,19 +981,6 @@ textarea {
   color: var(--text);
 }
 
-.flow-page-renderer {
-  position: relative;
-  min-height: 70vh;
-  border: 1px solid var(--border);
-  border-radius: 24px;
-  overflow: hidden;
-  background:
-          radial-gradient(circle at top left, rgba(166, 61, 245, 0.12), transparent 32%),
-          linear-gradient(180deg, #12131d 0%, #171929 100%);
-  color: #ffffff;
-  box-shadow: var(--shadow-md);
-}
-
 .flow-page-renderer__overlay {
   min-height: 70vh;
   padding: 40px;
@@ -1104,10 +1091,6 @@ textarea {
     grid-template-columns: 1fr;
   }
 
-  .flow-page-renderer {
-    min-height: 58vh;
-  }
-
   .flow-page-renderer__overlay {
     min-height: 58vh;
   }
@@ -1193,20 +1176,6 @@ textarea {
 .flow-editor-live-preview__header p {
   margin: 0;
   color: var(--text);
-}
-
-.flow-page-renderer {
-  position: relative;
-  min-height: 70vh;
-  border: 1px solid var(--border);
-  border-radius: 24px;
-  overflow: hidden;
-  background:
-          radial-gradient(circle at top left, rgba(120, 98, 255, 0.22), transparent 32%),
-          radial-gradient(circle at top right, rgba(0, 194, 255, 0.16), transparent 28%),
-          linear-gradient(180deg, #2a2452 0%, #1f2d5c 48%, #15213e 100%);
-  color: #fff;
-  box-shadow: var(--shadow-md);
 }
 
 .flow-page-renderer__background {
@@ -1453,6 +1422,19 @@ textarea {
   border: none;
   border-radius: 0;
   box-shadow: none;
+}
+
+.flow-page-renderer {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  background:
+          radial-gradient(circle at top left, rgba(120, 98, 255, 0.22), transparent 32%),
+          radial-gradient(circle at top right, rgba(0, 194, 255, 0.16), transparent 28%),
+          linear-gradient(180deg, #2a2452 0%, #1f2d5c 48%, #15213e 100%);
+  color: #fff;
 }
 
 .game-flow-player-stage .flow-page-renderer__overlay {
@@ -1990,4 +1972,31 @@ textarea {
   background: color-mix(in srgb, var(--surface) 88%, #9ca3af 12%);
   color: color-mix(in srgb, var(--text-strong) 55%, transparent 45%);
   border-color: color-mix(in srgb, var(--border) 75%, transparent 25%);
+}
+
+.flow-editor-link-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 11px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-strong);
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+  transition: 0.18s ease;
+  margin-bottom: 20px;
+}
+
+.flow-editor-link-btn:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent-border);
+  transform: translateY(-1px);
+}
+
+.flow-editor-link-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--accent-soft);
 }

@@ -854,6 +854,7 @@ function QuestionFlowEditorPage() {
             <p>This shows how the current page will look in the game.</p>
           </div>
           <a
+            className="flow-editor-link-btn"
             href={`/game/${id}/flow/${flowId}/play`}
             target="_blank"
             rel="noopener noreferrer"
