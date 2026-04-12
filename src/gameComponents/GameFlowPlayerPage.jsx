@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getGameById, getMediaById, updateGame } from "../db.js";
 import FlowPageRenderer from "../FlowPageRenderer.jsx";
 import "../index.css";
@@ -24,6 +24,9 @@ function getAutoTitle(flowPages, game) {
 function GameFlowPlayerPage() {
   const { id, flowId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isEditorPreview = Boolean(location.state?.fromEditor);
+  const returnTo = location.state?.returnTo || `/game/${id}/flow/${flowId}`;
 
   const [game, setGame] = useState(null);
   const [currentPageId, setCurrentPageId] = useState("");
@@ -413,12 +416,14 @@ function GameFlowPlayerPage() {
             type="button"
             className="game-flow-player-btn"
             onClick={() =>
-              linkedBoardPageId
-                ? navigate(`/play/${id}/board/${linkedBoardPageId}`)
-                : navigate(`/game/${id}`)
+              isEditorPreview
+                ? navigate(returnTo)
+                : linkedBoardPageId
+                  ? navigate(`/play/${id}/board/${linkedBoardPageId}`)
+                  : navigate(`/game/${id}`)
             }
           >
-            {linkedBoardPageId ? "Back to board" : "Back"}
+            {isEditorPreview ? "Back to editor" : linkedBoardPageId ? "Back to board" : "Back"}
           </button>
         </div>
 

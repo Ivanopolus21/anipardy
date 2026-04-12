@@ -881,14 +881,20 @@ function QuestionFlowEditorPage() {
                 <p>This shows how the current page will look in the game.</p>
               </div>
 
-              <a
+              <button
+                type="button"
                 className="flow-editor-link-btn"
-                href={`/game/${id}/flow/${flowId}/play`}
-                target="_blank"
-                rel="noopener noreferrer"
+                onClick={() =>
+                  navigate(`/game/${id}/flow/${flowId}/play`, {
+                    state: {
+                      fromEditor: true,
+                      returnTo: `/game/${id}/flow/${flowId}`,
+                    },
+                  })
+                }
               >
                 Open gameplay view
-              </a>
+              </button>
             </div>
 
             <div className="flow-editor-live-preview__frame">

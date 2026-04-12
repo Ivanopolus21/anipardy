@@ -440,6 +440,109 @@ select:focus {
   box-shadow: var(--shadow-sm);
 }
 
+.play-btn {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 11px 18px;
+  border: 1px solid color-mix(in srgb, white 22%, var(--accent) 78%);
+  border-radius: var(--radius-sm);
+  color: white;
+  letter-spacing: 0.01em;
+  background:
+          linear-gradient(
+                  120deg,
+                  color-mix(in srgb, var(--accent) 72%, #6aa2ff 48%) 0%,
+                  color-mix(in srgb, var(--accent) 88%, #7c3aed 12%) 36%,
+                  color-mix(in srgb, var(--accent) 58%, #60a5fa 42%) 54%,
+                  color-mix(in srgb, var(--accent) 86%, #4338ca 14%) 72%,
+                  color-mix(in srgb, var(--accent) 70%, #93c5fd 30%) 100%
+          );
+  background-size: 220% 220%;
+  box-shadow:
+          0 10px 24px rgba(16, 24, 40, 0.12),
+          0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+  transition:
+          transform 0.18s ease,
+          box-shadow 0.18s ease,
+          filter 0.18s ease,
+          background-position 0.25s ease;
+  animation: play-btn-gradient 4s linear infinite;
+}
+
+.play-btn::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: calc(var(--radius-sm) - 1px);
+  background: linear-gradient(
+          120deg,
+          rgba(255, 255, 255, 0.00) 0%,
+          rgba(255, 255, 255, 0.00) 35%,
+          rgba(255, 255, 255, 0.26) 48%,
+          rgba(255, 255, 255, 0.00) 60%,
+          rgba(255, 255, 255, 0.00) 100%
+  );
+  background-size: 220% 100%;
+  background-position: 140% 0;
+  z-index: -1;
+  animation: play-btn-shimmer 2.2s ease-in-out infinite;
+}
+
+.play-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: saturate(1.08) brightness(1.03);
+  box-shadow:
+          0 14px 30px rgba(16, 24, 40, 0.18),
+          0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+}
+
+.play-btn:active:not(:disabled) {
+  transform: translateY(0);
+  filter: brightness(0.98);
+}
+
+.play-btn:focus-visible {
+  outline: none;
+  box-shadow:
+          0 0 0 4px var(--accent-soft),
+          0 10px 24px rgba(16, 24, 40, 0.14);
+}
+
+.play-btn:disabled {
+  background: color-mix(in srgb, var(--accent) 55%, #808080 45%);
+  color: rgba(255, 255, 255, 0.88);
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+  animation: none;
+}
+
+.play-btn:disabled::before {
+  animation: none;
+  opacity: 0;
+}
+
+@keyframes play-btn-shimmer {
+  0% {
+    background-position: 140% 0;
+  }
+  100% {
+    background-position: -40% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .play-btn,
+  .play-btn::before {
+    animation: none;
+  }
+}
+
 .create:hover,
 .primary-btn:hover,
 .manager-page__actions .primary-btn:hover,

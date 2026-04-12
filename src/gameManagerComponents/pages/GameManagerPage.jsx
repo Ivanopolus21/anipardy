@@ -149,7 +149,7 @@ function GameManagerPage() {
                       Edit players
                   </button>
                   <button
-                    className={"primary-btn"}
+                    className="play-btn"
                     onClick={() => {
                         const firstBoard = configuredBoardPages[0];
                         if (!firstBoard) return;
@@ -215,7 +215,7 @@ function GameManagerPage() {
                                 onClick={() => openManagerItem(item)}
                               >
                                   <div className="page-card__top">
-                                      <h3>{item.pages[0].name || "The BoardPlayerPage"}</h3>
+                                      <h3>{"The Board"}</h3>
                                       <button
                                         type="button"
                                         className="page-card__delete-btn"
