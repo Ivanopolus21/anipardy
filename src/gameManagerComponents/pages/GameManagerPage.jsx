@@ -129,11 +129,14 @@ function GameManagerPage() {
                   )}
               </div>
 
-              <div className="manager-card">
+              <div className="manager-card manager-card--pages">
                   <h2>Game pages</h2>
                   <p>Total items: {managerItems.length}</p>
 
-                  <button className={"primary-btn"} onClick={() => navigate(`/game/${game.id}/pages/new`)}>
+                  <button
+                    className="primary-btn"
+                    onClick={() => navigate(`/game/${game.id}/pages/new`)}
+                  >
                       Add new page
                   </button>
               </div>

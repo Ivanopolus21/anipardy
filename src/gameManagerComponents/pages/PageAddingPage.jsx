@@ -71,12 +71,14 @@ function PageAddingPage() {
           </button>
         </div>
 
-        <button
-          className="back-btn"
-          onClick={() => navigate(`/game/${game.id}`)}
-        >
-          Back
-        </button>
+        <div className="page-adding-actions">
+          <button
+            className="secondary-btn"
+            onClick={() => navigate(`/game/${game.id}`)}
+          >
+            Back
+          </button>
+        </div>
       </div>
     </section>
   );

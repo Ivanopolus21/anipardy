@@ -7,6 +7,7 @@
   --text-h: #161722;
   --border: #e7e8ef;
   --accent: #a63df5;
+  --sec-btn-background: #dadada;
 
   --accent-soft: rgba(166, 61, 245, 0.1);
   --accent-border: rgba(166, 61, 245, 0.35);
@@ -301,6 +302,10 @@ p {
   color: var(--text);
 }
 
+.page-adding-actions {
+  margin-top: 16px;
+}
+
 .flow-adding-header {
   margin-bottom: 24px;
 }
@@ -402,7 +407,7 @@ select:focus {
 .back-btn,
 .player-row button,
 .player-setup__actions button[type="button"] {
-  background: var(--surface);
+  background: var(--sec-btn-background);
   color: var(--text-strong);
   border: 1px solid var(--border);
   padding: 11px 16px;
@@ -2289,4 +2294,20 @@ textarea {
     grid-template-columns: 1fr;
     gap: 12px;
   }
+}
+
+.manager-card--pages {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.manager-card--pages h2,
+.manager-card--pages p {
+  margin: 0;
+}
+
+.manager-card--pages .primary-btn {
+  align-self: flex-start;
+  margin-top: 4px;
 }
