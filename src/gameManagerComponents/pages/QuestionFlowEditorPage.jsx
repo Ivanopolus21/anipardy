@@ -353,6 +353,12 @@ function QuestionFlowEditorPage() {
   }, [activePage, fallbackBackgroundPage]);
 
   useEffect(() => {
+    if (activePage?.type === "answer") {
+      setShowAdvancedFeatures(false);
+    }
+  }, [activePage]);
+
+  useEffect(() => {
     let isCancelled = false;
     const objectUrls = [];
 
@@ -539,10 +545,16 @@ function QuestionFlowEditorPage() {
         useCustomBackground: draft.useCustomBackground,
         backgroundMediaId: draft.useCustomBackground ? draft.backgroundMediaId : "",
         backgroundName: draft.useCustomBackground ? draft.backgroundName : "",
-        enableModifier: draft.enableModifier,
-        modifierText: draft.enableModifier ? draft.modifierText : "",
-        enableTimer: draft.enableTimer,
-        timerSeconds: draft.enableTimer ? draft.timerSeconds || 60 : 60,
+        enableModifier: page.type === "question-step" ? draft.enableModifier : false,
+        modifierText:
+          page.type === "question-step" && draft.enableModifier
+            ? draft.modifierText
+            : "",
+        enableTimer: page.type === "question-step" ? draft.enableTimer : false,
+        timerSeconds:
+          page.type === "question-step" && draft.enableTimer
+            ? draft.timerSeconds || 60
+            : 60,
       };
 
       return commonFields;
@@ -570,6 +582,7 @@ function QuestionFlowEditorPage() {
 
   const mediaItem = draft.mediaItems[0] || null;
   const isAnswerPage = activePage.type === "answer";
+  const isQuestionPage = activePage.type === "question-step";
   const mediaPreviewUrl = mediaItem ? mediaPreviews[mediaItem.id] || "" : "";
   const mediaPreviewMap = Object.fromEntries(
     draft.mediaItems.map((item) => [item.id, mediaPreviews[item.id] || ""])
@@ -591,13 +604,9 @@ function QuestionFlowEditorPage() {
             <button
               className="secondary-btn"
               type="button"
-              onClick={() =>
-                linkedBoardPageId
-                  ? navigate(`/game/${id}/board/${linkedBoardPageId}`)
-                  : navigate(`/game/${id}`)
-              }
+              onClick={() => navigate(`/game/${id}`)}
             >
-              {linkedBoardPageId ? "Back to board" : "Back to game"}
+              Back to manager
             </button>
           </div>
         </div>
@@ -786,6 +795,7 @@ function QuestionFlowEditorPage() {
               ) : null}
             </div>
 
+            {isQuestionPage && (
             <div className="flow-editor-section">
               <button
                 type="button"
@@ -856,7 +866,7 @@ function QuestionFlowEditorPage() {
                 </div>
               ) : null}
             </div>
-
+            )}
             <div className="flow-editor-footer">
               <button className="primary-btn" type="submit" disabled={isSaving}>
                 {isSaving ? "Saving..." : "Save changes"}
