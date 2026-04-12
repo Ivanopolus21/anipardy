@@ -287,6 +287,12 @@ function SupergamePlayerPage() {
                 </button>
               ))}
             </div>
+            <button
+              className="secondary-btn"
+              onClick={() => navigate(`/game/${id}/winner`)}
+            >
+              Show winner
+            </button>
           </div>
         </div>
       )}

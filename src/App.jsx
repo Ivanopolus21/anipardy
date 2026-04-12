@@ -12,6 +12,7 @@ import SupergameEditorPage from "./gameManagerComponents/pages/SupergameEditorPa
 import GameFlowPlayerPage from "../src/gameComponents/GameFlowPlayerPage.jsx";
 import BoardPlayerPage from "./gameComponents/BoardPlayerPage.jsx";
 import SupergamePlayerPage from "./gameComponents/SupergamePlayerPage.jsx";
+import WinnerPage from "./gameComponents/WinnerPage.jsx";
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
       <Route path="/game/:id/flow/:flowId/play" element={<GameFlowPlayerPage />} />
       <Route path="/play/:id/board/:pageId" element={<BoardPlayerPage />} />
       <Route path="/play/:id/supergame/:pageId" element={<SupergamePlayerPage />} />
+      <Route path="/game/:id/winner" element={<WinnerPage />} />
     </Routes>
   );
 }
