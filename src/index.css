@@ -224,6 +224,53 @@ p {
   background: linear-gradient(180deg, var(--accent-soft), var(--surface));
 }
 
+.create-game-page {
+  padding: 32px 20px;
+}
+
+.create-game-card {
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.create-game-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.create-game-header h1 {
+  margin: 0;
+}
+
+.create-game-header p {
+  margin: 0;
+}
+
+.create-game-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.create-game-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.create-game-field input {
+  width: 100%;
+  max-width: 420px;
+}
+
+.create-game-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
 .page-adding-page,
 .flow-adding-page,
 .player-setup {
