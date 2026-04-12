@@ -284,6 +284,27 @@ function QuestionFlowEditorPage() {
     return flowPages.find((page) => page.id === activePageId) || null;
   }, [flowPages, activePageId]);
 
+  const fallbackBackgroundPage = useMemo(() => {
+    if (!activePage || activePage.type !== "answer") return null;
+
+    return (
+      flowPages.find(
+        (page) =>
+          page.type === "question-step" &&
+          page.useCustomBackground &&
+          page.backgroundMediaId
+      ) || null
+    );
+  }, [activePage, flowPages]);
+
+  const effectiveBackgroundMediaId = useMemo(() => {
+    if (draft.useCustomBackground && draft.backgroundMediaId) {
+      return draft.backgroundMediaId;
+    }
+
+    return fallbackBackgroundPage?.backgroundMediaId || "";
+  }, [draft.useCustomBackground, draft.backgroundMediaId, fallbackBackgroundPage]);
+
   const autoTitle = useMemo(() => {
     return getAutoTitle(flowPages, game);
   }, [flowPages, game]);
@@ -298,6 +319,21 @@ function QuestionFlowEditorPage() {
 
     const normalized = normalizePageContent(activePage);
 
+    const inheritedBackground =
+      activePage.type === "answer" &&
+      !activePage.useCustomBackground &&
+      fallbackBackgroundPage
+        ? {
+          useCustomBackground: true,
+          backgroundMediaId: fallbackBackgroundPage.backgroundMediaId || "",
+          backgroundName: fallbackBackgroundPage.backgroundName || "",
+        }
+        : {
+          useCustomBackground: Boolean(activePage.useCustomBackground),
+          backgroundMediaId: activePage.backgroundMediaId || "",
+          backgroundName: activePage.backgroundName || "",
+        };
+
     setDraft({
       titleMode: activePage.titleMode || "auto",
       customTitle: activePage.customTitle || "",
@@ -306,15 +342,15 @@ function QuestionFlowEditorPage() {
       mediaItems: normalized.mediaItems,
       answer: activePage.answer || "",
       explanation: activePage.explanation || "",
-      useCustomBackground: Boolean(activePage.useCustomBackground),
-      backgroundMediaId: activePage.backgroundMediaId || "",
-      backgroundName: activePage.backgroundName || "",
+      useCustomBackground: inheritedBackground.useCustomBackground,
+      backgroundMediaId: inheritedBackground.backgroundMediaId,
+      backgroundName: inheritedBackground.backgroundName,
       enableModifier: Boolean(activePage.enableModifier),
       modifierText: activePage.modifierText || "",
       enableTimer: Boolean(activePage.enableTimer),
       timerSeconds: activePage.timerSeconds ?? 60,
     });
-  }, [activePage]);
+  }, [activePage, fallbackBackgroundPage]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -357,13 +393,12 @@ function QuestionFlowEditorPage() {
     let objectUrl = "";
 
     async function loadBackgroundPreview() {
-      if (!draft.useCustomBackground || !draft.backgroundMediaId) {
+      if (!effectiveBackgroundMediaId) {
         setBackgroundPreviewUrl("");
         return;
       }
 
-      const mediaRecord = await getMediaById(draft.backgroundMediaId);
-
+      const mediaRecord = await getMediaById(effectiveBackgroundMediaId);
       if (!mediaRecord?.blob) {
         setBackgroundPreviewUrl("");
         return;
@@ -384,7 +419,7 @@ function QuestionFlowEditorPage() {
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [draft.useCustomBackground, draft.backgroundMediaId]);
+  }, [effectiveBackgroundMediaId]);
 
   function updateDraftField(field, value) {
     setDraft((current) => ({
@@ -588,301 +623,314 @@ function QuestionFlowEditorPage() {
           ))}
         </div>
 
-        <form className="flow-editor-card" onSubmit={handleSave}>
-          <div className="flow-editor-field">
-            <span>Page Title</span>
-            <div className="flow-editor-title-box">
-              <div className="flow-editor-title-preview">{effectiveTitle}</div>
-              <p className="flow-editor-title-help">
-                This is the title players will see on this page.
-              </p>
+        <div className="flow-editor-panels">
+          <form className="flow-editor-card flow-editor-panel" onSubmit={handleSave}>
+            <div className="flow-editor-panel__header">
+              <h2>Page config</h2>
             </div>
-          </div>
 
-          <label className="flow-editor-checkbox">
-            <input
-              type="checkbox"
-              checked={draft.titleMode === "custom"}
-              onChange={(e) =>
-                updateDraftField("titleMode", e.target.checked ? "custom" : "auto")
-              }
-            />
-            <span>Use custom player title</span>
-          </label>
-
-          {draft.titleMode === "custom" && (
-            <label className="flow-editor-field">
-              <span>Custom title</span>
-              <input
-                type="text"
-                value={draft.customTitle}
-                onChange={(e) => updateDraftField("customTitle", e.target.value)}
-                placeholder={autoTitle}
-              />
-            </label>
-          )}
-
-          <label className="flow-editor-field">
-            <span>Layout</span>
-            <select
-              value={draft.layout}
-              onChange={(e) => handleLayoutChange(e.target.value)}
-            >
-              <option value="text-only">Text only</option>
-              <option value="media-only">Media only</option>
-              <option value="text-media">1 text + 1 media</option>
-            </select>
-          </label>
-
-          {(draft.layout === "text-only" || draft.layout === "text-media") && (
-            <div className="flow-editor-fields">
-              <label className="flow-editor-field">
-                <span>{isAnswerPage ? "Main text" : "Question text"}</span>
-                <textarea
-                  value={draft.textBlocks[0]?.value || ""}
-                  onChange={(e) =>
-                    updateTextBlock(draft.textBlocks[0].id, e.target.value)
-                  }
-                  placeholder={
-                    isAnswerPage
-                      ? "Write the main answer-page text"
-                      : "Write the question, clue, or prompt shown to players"
-                  }
-                />
-              </label>
+            <div className="flow-editor-field">
+              <div className="flow-editor-title-box">
+                <div className="flow-editor-title-preview">{effectiveTitle}</div>
+                <p className="flow-editor-title-help">
+                  This is the title players will see on this page.
+                </p>
+              </div>
             </div>
-          )}
-
-          {(draft.layout === "media-only" || draft.layout === "text-media") && mediaItem && (
-            <div className="flow-editor-fields">
-              <label className="flow-editor-field">
-                <span>Media type</span>
-                <select
-                  value={mediaItem.type}
-                  onChange={(e) => updateMediaItem(mediaItem.id, "type", e.target.value)}
-                >
-                  <option value="image">Image / GIF</option>
-                  <option value="audio">Audio</option>
-                  <option value="video">Video</option>
-                </select>
-              </label>
-
-              <label className="flow-editor-field">
-                <span>Upload file</span>
-                <input
-                  type="file"
-                  accept={
-                    mediaItem.type === "image"
-                      ? "image/*,.gif"
-                      : mediaItem.type === "audio"
-                        ? "audio/*"
-                        : "video/*,.mp4,.mkv"
-                  }
-                  onChange={(e) => handleMediaFileChange(mediaItem.id, e.target.files?.[0])}
-                />
-              </label>
-
-              {mediaItem.name && (
-                <div className="flow-editor-file-note">
-                  Selected file: {mediaItem.name}
-                </div>
-              )}
-
-              {mediaItem.type === "image" && (
-                <label className="flow-editor-field">
-                  <span>Alt text</span>
-                  <input
-                    type="text"
-                    value={mediaItem.alt || ""}
-                    onChange={(e) => updateMediaItem(mediaItem.id, "alt", e.target.value)}
-                    placeholder="Describe the image briefly"
-                  />
-                </label>
-              )}
-
-              {mediaPreviewUrl && mediaItem.type === "image" && (
-                <div className="flow-editor-preview">
-                  <img src={mediaPreviewUrl} alt={mediaItem.alt || ""} />
-                </div>
-              )}
-
-              {mediaPreviewUrl && mediaItem.type === "audio" && (
-                <div className="flow-editor-preview">
-                  <audio controls src={mediaPreviewUrl} />
-                </div>
-              )}
-
-              {mediaPreviewUrl && mediaItem.type === "video" && (
-                <div className="flow-editor-preview">
-                  <video controls src={mediaPreviewUrl} />
-                </div>
-              )}
-            </div>
-          )}
-
-          {isAnswerPage && (
-            <div className="flow-editor-fields">
-              <label className="flow-editor-field">
-                <span>Answer</span>
-                <textarea
-                  value={draft.answer}
-                  onChange={(e) => updateDraftField("answer", e.target.value)}
-                  placeholder="Write the correct answer here"
-                />
-              </label>
-
-              <label className="flow-editor-field">
-                <span>Explanation</span>
-                <textarea
-                  value={draft.explanation}
-                  onChange={(e) => updateDraftField("explanation", e.target.value)}
-                  placeholder="Add extra context, explanation, or fun facts"
-                />
-              </label>
-            </div>
-          )}
-          <div className="flow-editor-section">
-            <h3>Background</h3>
 
             <label className="flow-editor-checkbox">
               <input
                 type="checkbox"
-                checked={draft.useCustomBackground}
+                checked={draft.titleMode === "custom"}
                 onChange={(e) =>
-                  updateDraftField("useCustomBackground", e.target.checked)
+                  updateDraftField("titleMode", e.target.checked ? "custom" : "auto")
                 }
               />
-              Use custom background
+              <span>Use custom player title</span>
             </label>
 
-            {draft.useCustomBackground ? (
-              <div className="flow-editor-stack">
+            {draft.titleMode === "custom" && (
+              <label className="flow-editor-field">
+                <span>Custom title</span>
                 <input
-                  type="file"
-                  accept="image/*,video/*"
-                  onChange={(e) => handleBackgroundFileChange(e.target.files?.[0])}
+                  type="text"
+                  value={draft.customTitle}
+                  onChange={(e) => updateDraftField("customTitle", e.target.value)}
+                  placeholder={autoTitle}
                 />
+              </label>
+            )}
 
-                {draft.backgroundName ? (
-                  <div className="flow-editor-file-note">
-                    Background file: {draft.backgroundName}
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
+            <label className="flow-editor-field">
+              <span>Layout</span>
+              <select
+                value={draft.layout}
+                onChange={(e) => handleLayoutChange(e.target.value)}
+              >
+                <option value="text-only">Text only</option>
+                <option value="media-only">Media only</option>
+                <option value="text-media">1 text + 1 media</option>
+              </select>
+            </label>
 
-          <div className="flow-editor-section">
-            <button
-              type="button"
-              className="flow-editor-advanced-toggle"
-              onClick={() => setShowAdvancedFeatures((current) => !current)}
-              aria-expanded={showAdvancedFeatures}
-            >
-              Advanced features
-            </button>
-
-            {showAdvancedFeatures ? (
-              <div className="flow-editor-advanced-panel">
-                <label className="flow-editor-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={draft.enableModifier}
+            {(draft.layout === "text-only" || draft.layout === "text-media") && (
+              <div className="flow-editor-fields">
+                <label className="flow-editor-field">
+                  <span>{isAnswerPage ? "Main text" : "Question text"}</span>
+                  <textarea
+                    value={draft.textBlocks[0]?.value || ""}
                     onChange={(e) =>
-                      setDraft((current) => ({
-                        ...current,
-                        enableModifier: e.target.checked,
-                      }))
+                      updateTextBlock(draft.textBlocks[0].id, e.target.value)
+                    }
+                    placeholder={
+                      isAnswerPage
+                        ? "Write the main answer-page text"
+                        : "Write the question, clue, or prompt shown to players"
                     }
                   />
-                  Enable modifier
+                </label>
+              </div>
+            )}
+
+            {(draft.layout === "media-only" || draft.layout === "text-media") && mediaItem && (
+              <div className="flow-editor-fields">
+                <label className="flow-editor-field">
+                  <span>Media type</span>
+                  <select
+                    value={mediaItem.type}
+                    onChange={(e) => updateMediaItem(mediaItem.id, "type", e.target.value)}
+                  >
+                    <option value="image">Image / GIF</option>
+                    <option value="audio">Audio</option>
+                    <option value="video">Video</option>
+                  </select>
                 </label>
 
-                {draft.enableModifier ? (
-                  <div>
-                    <label className="flow-editor-label">Modifier text</label>
+                <label className="flow-editor-field">
+                  <span>Upload file</span>
+                  <input
+                    type="file"
+                    accept={
+                      mediaItem.type === "image"
+                        ? "image/*,.gif"
+                        : mediaItem.type === "audio"
+                          ? "audio/*"
+                          : "video/*,.mp4,.mkv"
+                    }
+                    onChange={(e) => handleMediaFileChange(mediaItem.id, e.target.files?.[0])}
+                  />
+                </label>
+
+                {mediaItem.name && (
+                  <div className="flow-editor-file-note">
+                    Selected file: {mediaItem.name}
+                  </div>
+                )}
+
+                {mediaItem.type === "image" && (
+                  <label className="flow-editor-field">
+                    <span>Alt text</span>
                     <input
                       type="text"
-                      value={draft.modifierText}
-                      onChange={(e) => updateDraftField("modifierText", e.target.value)}
-                      placeholder="Example: X2 points"
+                      value={mediaItem.alt || ""}
+                      onChange={(e) => updateMediaItem(mediaItem.id, "alt", e.target.value)}
+                      placeholder="Describe the image briefly"
                     />
-                  </div>
-                ) : null}
+                  </label>
+                )}
 
-                <label className="flow-editor-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={draft.enableTimer}
-                    onChange={(e) =>
-                      setDraft((current) => ({
-                        ...current,
-                        enableTimer: e.target.checked,
-                        timerSeconds: e.target.checked ? 60 : current.timerSeconds,
-                      }))
-                    }
+                {mediaPreviewUrl && mediaItem.type === "image" && (
+                  <div className="flow-editor-preview">
+                    <img src={mediaPreviewUrl} alt={mediaItem.alt || ""} />
+                  </div>
+                )}
+
+                {mediaPreviewUrl && mediaItem.type === "audio" && (
+                  <div className="flow-editor-preview">
+                    <audio controls src={mediaPreviewUrl} />
+                  </div>
+                )}
+
+                {mediaPreviewUrl && mediaItem.type === "video" && (
+                  <div className="flow-editor-preview">
+                    <video controls src={mediaPreviewUrl} />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {isAnswerPage && (
+              <div className="flow-editor-fields">
+                <label className="flow-editor-field">
+                  <span>Answer</span>
+                  <textarea
+                    value={draft.answer}
+                    onChange={(e) => updateDraftField("answer", e.target.value)}
+                    placeholder="Write the correct answer here"
                   />
-                  Enable 1 minute timer
                 </label>
 
-                {draft.enableTimer ? (
-                  <div>
-                    <label className="flow-editor-label">Timer length in seconds</label>
+                <label className="flow-editor-field">
+                  <span>Explanation</span>
+                  <textarea
+                    value={draft.explanation}
+                    onChange={(e) => updateDraftField("explanation", e.target.value)}
+                    placeholder="Add extra context, explanation, or fun facts"
+                  />
+                </label>
+              </div>
+            )}
+
+            <div className="flow-editor-section">
+              <h3>Background</h3>
+
+              <label className="flow-editor-checkbox">
+                <input
+                  type="checkbox"
+                  checked={draft.useCustomBackground}
+                  onChange={(e) =>
+                    updateDraftField("useCustomBackground", e.target.checked)
+                  }
+                />
+                Use custom background
+              </label>
+
+              {draft.useCustomBackground ? (
+                <div className="flow-editor-stack">
+                  <input
+                    type="file"
+                    accept="image/*,video/*"
+                    onChange={(e) => handleBackgroundFileChange(e.target.files?.[0])}
+                  />
+
+                  {/*{draft.backgroundName ? (*/}
+                  {/*  <div className="flow-editor-file-note">*/}
+                  {/*    Background file: {draft.backgroundName}*/}
+                  {/*  </div>*/}
+                  {/*) : null}*/}
+                </div>
+              ) : null}
+            </div>
+
+            <div className="flow-editor-section">
+              <button
+                type="button"
+                className="flow-editor-advanced-toggle"
+                onClick={() => setShowAdvancedFeatures((current) => !current)}
+                aria-expanded={showAdvancedFeatures}
+              >
+                Advanced features
+              </button>
+
+              {showAdvancedFeatures ? (
+                <div className="flow-editor-advanced-panel">
+                  <label className="flow-editor-checkbox">
                     <input
-                      type="number"
-                      min="5"
-                      max="600"
-                      value={draft.timerSeconds}
+                      type="checkbox"
+                      checked={draft.enableModifier}
                       onChange={(e) =>
-                        updateDraftField("timerSeconds", Number(e.target.value) || 60)
+                        setDraft((current) => ({
+                          ...current,
+                          enableModifier: e.target.checked,
+                        }))
                       }
                     />
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-          <div className="flow-editor-footer">
-            <button className="primary-btn" type="submit" disabled={isSaving}>
-              {isSaving ? "Saving..." : "Save changes"}
-            </button>
-          </div>
-        </form>
-        <div className="flow-editor-live-preview">
-          <div className="flow-editor-live-preview__header">
-            <h2>Game page preview</h2>
-            <p>This shows how the current page will look in the game.</p>
-          </div>
-          <a
-            className="flow-editor-link-btn"
-            href={`/game/${id}/flow/${flowId}/play`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Open gameplay view
-          </a>
+                    Enable modifier
+                  </label>
 
-          <FlowPageRenderer
-            page={{
-              ...activePage,
-              layout: draft.layout,
-              textBlocks: draft.textBlocks,
-              mediaItems: draft.mediaItems,
-              answer: draft.answer,
-              explanation: draft.explanation,
-              useCustomBackground: draft.useCustomBackground,
-              backgroundMediaId: draft.backgroundMediaId,
-              enableModifier: draft.enableModifier,
-              modifierText: draft.modifierText,
-              enableTimer: draft.enableTimer,
-              timerSeconds: draft.timerSeconds,
-              type: activePage.type,
-            }}
-            pageTitle={effectiveTitle}
-            mediaPreviewMap={mediaPreviewMap}
-            backgroundPreviewUrl={backgroundPreviewUrl}
-            mode="preview"
-          />
+                  {draft.enableModifier ? (
+                    <div>
+                      <label className="flow-editor-label">Modifier text</label>
+                      <input
+                        type="text"
+                        value={draft.modifierText}
+                        onChange={(e) => updateDraftField("modifierText", e.target.value)}
+                        placeholder="Example: X2 points"
+                      />
+                    </div>
+                  ) : null}
+
+                  <label className="flow-editor-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={draft.enableTimer}
+                      onChange={(e) =>
+                        setDraft((current) => ({
+                          ...current,
+                          enableTimer: e.target.checked,
+                          timerSeconds: e.target.checked ? 60 : current.timerSeconds,
+                        }))
+                      }
+                    />
+                    Enable 1 minute timer
+                  </label>
+
+                  {draft.enableTimer ? (
+                    <div>
+                      <label className="flow-editor-label">Timer length in seconds</label>
+                      <input
+                        type="number"
+                        min="5"
+                        max="600"
+                        value={draft.timerSeconds}
+                        onChange={(e) =>
+                          updateDraftField("timerSeconds", Number(e.target.value) || 60)
+                        }
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+
+            <div className="flow-editor-footer">
+              <button className="primary-btn" type="submit" disabled={isSaving}>
+                {isSaving ? "Saving..." : "Save changes"}
+              </button>
+            </div>
+          </form>
+
+          <aside className="flow-editor-live-preview flow-editor-panel">
+            <div className="flow-editor-panel__header flow-editor-live-preview__header">
+              <div>
+                <h2>Page preview</h2>
+                <p>This shows how the current page will look in the game.</p>
+              </div>
+
+              <a
+                className="flow-editor-link-btn"
+                href={`/game/${id}/flow/${flowId}/play`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Open gameplay view
+              </a>
+            </div>
+
+            <div className="flow-editor-live-preview__frame">
+              <FlowPageRenderer
+                page={{
+                  ...activePage,
+                  layout: draft.layout,
+                  textBlocks: draft.textBlocks,
+                  mediaItems: draft.mediaItems,
+                  answer: draft.answer,
+                  explanation: draft.explanation,
+                  useCustomBackground: draft.useCustomBackground,
+                  backgroundMediaId: draft.backgroundMediaId,
+                  enableModifier: draft.enableModifier,
+                  modifierText: draft.modifierText,
+                  enableTimer: draft.enableTimer,
+                  timerSeconds: draft.timerSeconds,
+                  type: activePage.type,
+                }}
+                pageTitle={effectiveTitle}
+                mediaPreviewMap={mediaPreviewMap}
+                backgroundPreviewUrl={backgroundPreviewUrl}
+                mode="preview"
+              />
+            </div>
+          </aside>
         </div>
       </div>
     </section>

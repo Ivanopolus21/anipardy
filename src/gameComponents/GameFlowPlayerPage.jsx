@@ -209,6 +209,42 @@ function GameFlowPlayerPage() {
 
   useEffect(() => {
     let isCancelled = false;
+    const objectUrls = [];
+
+    async function loadMediaPreviews() {
+      if (!currentPage?.mediaItems?.length) {
+        setMediaPreviewMap({});
+        return;
+      }
+
+      const nextMap = {};
+
+      for (const item of currentPage.mediaItems) {
+        if (!item?.mediaId) continue;
+
+        const mediaRecord = await getMediaById(item.mediaId);
+        if (!mediaRecord?.blob) continue;
+
+        const previewUrl = URL.createObjectURL(mediaRecord.blob);
+        objectUrls.push(previewUrl);
+        nextMap[item.id] = previewUrl;
+      }
+
+      if (!isCancelled) {
+        setMediaPreviewMap(nextMap);
+      }
+    }
+
+    loadMediaPreviews();
+
+    return () => {
+      isCancelled = true;
+      objectUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [currentPage?.id, currentPage?.mediaItems]);
+
+  useEffect(() => {
+    let isCancelled = false;
     let objectUrl = "";
 
     async function loadBackgroundPreview() {
