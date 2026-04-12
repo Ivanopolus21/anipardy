@@ -234,8 +234,6 @@ function QuestionFlowEditorPage() {
     layout: "text-only",
     textBlocks: [createEmptyTextBlock()],
     mediaItems: [],
-    answer: "",
-    explanation: "",
     useCustomBackground: false,
     backgroundMediaId: "",
     backgroundName: "",
@@ -340,8 +338,6 @@ function QuestionFlowEditorPage() {
       layout: normalized.layout,
       textBlocks: normalized.textBlocks,
       mediaItems: normalized.mediaItems,
-      answer: activePage.answer || "",
-      explanation: activePage.explanation || "",
       useCustomBackground: inheritedBackground.useCustomBackground,
       backgroundMediaId: inheritedBackground.backgroundMediaId,
       backgroundName: inheritedBackground.backgroundName,
@@ -544,14 +540,6 @@ function QuestionFlowEditorPage() {
         enableTimer: draft.enableTimer,
         timerSeconds: draft.enableTimer ? draft.timerSeconds || 60 : 60,
       };
-
-      if (page.type === "answer") {
-        return {
-          ...commonFields,
-          answer: draft.answer,
-          explanation: draft.explanation,
-        };
-      }
 
       return commonFields;
     });
@@ -759,28 +747,6 @@ function QuestionFlowEditorPage() {
               </div>
             )}
 
-            {isAnswerPage && (
-              <div className="flow-editor-fields">
-                <label className="flow-editor-field">
-                  <span>Answer</span>
-                  <textarea
-                    value={draft.answer}
-                    onChange={(e) => updateDraftField("answer", e.target.value)}
-                    placeholder="Write the correct answer here"
-                  />
-                </label>
-
-                <label className="flow-editor-field">
-                  <span>Explanation</span>
-                  <textarea
-                    value={draft.explanation}
-                    onChange={(e) => updateDraftField("explanation", e.target.value)}
-                    placeholder="Add extra context, explanation, or fun facts"
-                  />
-                </label>
-              </div>
-            )}
-
             <div className="flow-editor-section">
               <h3>Background</h3>
 
@@ -914,8 +880,6 @@ function QuestionFlowEditorPage() {
                   layout: draft.layout,
                   textBlocks: draft.textBlocks,
                   mediaItems: draft.mediaItems,
-                  answer: draft.answer,
-                  explanation: draft.explanation,
                   useCustomBackground: draft.useCustomBackground,
                   backgroundMediaId: draft.backgroundMediaId,
                   enableModifier: draft.enableModifier,
