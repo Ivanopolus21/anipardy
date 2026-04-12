@@ -157,6 +157,20 @@ function BoardEditorPage() {
     return category?.questions?.[selectedCell.rowIndex] || null;
   }, [boardPage, selectedCell]);
 
+  const boardPages = useMemo(() => {
+    return (game?.gameConfig?.pages || []).filter((page) => page.type === "board");
+  }, [game]);
+
+  const currentBoardIndex = useMemo(() => {
+    return boardPages.findIndex((page) => page.id === pageId);
+  }, [boardPages, pageId]);
+
+  const previousBoard = currentBoardIndex > 0 ? boardPages[currentBoardIndex - 1] : null;
+  const nextBoard =
+    currentBoardIndex >= 0 && currentBoardIndex < boardPages.length - 1
+      ? boardPages[currentBoardIndex + 1]
+      : null;
+
   const linkedFlowPages =
     selectedQuestion?.flowId ? flowMap.get(selectedQuestion.flowId) || [] : [];
 
@@ -288,6 +302,26 @@ function BoardEditorPage() {
             <h1>{boardPage.name || "Board"}</h1>
             <p>Click a question cell to edit its points or open its linked flow.</p>
           </div>
+
+          {boardPages.length > 1 && (
+            <>
+              <button
+                className="secondary-btn"
+                onClick={() => previousBoard && navigate(`/game/${id}/board/${previousBoard.id}`)}
+                disabled={!previousBoard}
+              >
+                Previous board
+              </button>
+
+              <button
+                className="secondary-btn"
+                onClick={() => nextBoard && navigate(`/game/${id}/board/${nextBoard.id}`)}
+                disabled={!nextBoard}
+              >
+                Next board
+              </button>
+            </>
+          )}
 
           <div className="manager-page__actions">
             <button
