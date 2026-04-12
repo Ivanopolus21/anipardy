@@ -145,8 +145,23 @@ function BoardEditorPage() {
     await updateGame(updatedGame);
     setGame(updatedGame);
     setIsSavingCell(false);
-    closeCellEditor();
   }
+
+  const selectedQuestion = useMemo(() => {
+    if (!boardPage || !selectedCell) return null;
+
+    const category = boardPage.categories.find(
+      (item) => item.id === selectedCell.categoryId
+    );
+
+    return category?.questions?.[selectedCell.rowIndex] || null;
+  }, [boardPage, selectedCell]);
+
+  const hasSavedPoints =
+    selectedQuestion?.points !== null &&
+    selectedQuestion?.points !== undefined;
+
+  const canCreateFlow = Boolean(selectedCell?.flowId || hasSavedPoints);
 
   async function openOrCreateFlow() {
     if (!game || !boardPage || !selectedCell || isCreatingFlow) return;
@@ -164,10 +179,7 @@ function BoardEditorPage() {
     setIsCreatingFlow(true);
 
     const flowId = crypto.randomUUID();
-    const clueValue =
-      question.points !== null && question.points !== undefined
-        ? question.points
-        : (selectedCell.rowIndex + 1) * 100;
+    const clueValue = question.points;
 
     const questionPage = {
       id: crypto.randomUUID(),
@@ -369,7 +381,7 @@ function BoardEditorPage() {
 
                 <div className="board-side-panel__info">
                   <p>
-                    Save points here. Then open the linked flow to edit question and answer content.
+                    Save the points before creating and linking the question pages.
                   </p>
                 </div>
 
@@ -395,9 +407,13 @@ function BoardEditorPage() {
                     type="button"
                     className="primary-btn"
                     onClick={openOrCreateFlow}
-                    disabled={isSavingCell || isCreatingFlow}
+                    disabled={isSavingCell || isCreatingFlow || !canCreateFlow}
                   >
-                    {selectedCell.flowId ? "Open flow" : isCreatingFlow ? "Creating..." : "Create flow"}
+                    {selectedCell.flowId
+                      ? "Open flow"
+                      : isCreatingFlow
+                        ? "Creating..."
+                        : "Create flow"}
                   </button>
                 </div>
               </form>

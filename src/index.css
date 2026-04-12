@@ -1967,3 +1967,27 @@ textarea {
     grid-template-columns: 1fr;
   }
 }
+
+.primary-btn:disabled,
+.secondary-btn:disabled,
+.back-btn:disabled,
+.create:disabled,
+.manager-page__actions button:disabled,
+.player-setup__actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.primary-btn:disabled {
+  background: color-mix(in srgb, var(--accent) 55%, #808080 45%);
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.secondary-btn:disabled,
+.back-btn:disabled {
+  background: color-mix(in srgb, var(--surface) 88%, #9ca3af 12%);
+  color: color-mix(in srgb, var(--text-strong) 55%, transparent 45%);
+  border-color: color-mix(in srgb, var(--border) 75%, transparent 25%);
+}
