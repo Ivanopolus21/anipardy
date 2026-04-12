@@ -73,7 +73,7 @@ function PlayerSetupPage() {
         <section className="player-setup">
             <form className="player-setup__card" onSubmit={handleSubmit}>
                 <h1>{game.name}</h1>
-                <p>Add between 1 and 8 players.</p>
+                <p>Add between 1 and 8 players</p>
 
                 <div className="player-list">
                     {players.map((player, index) => (
@@ -106,7 +106,7 @@ function PlayerSetupPage() {
                         Add player
                     </button>
 
-                    <button type="submit">Start game</button>
+                    <button type="submit">Create game</button>
                 </div>
             </form>
         </section>
