@@ -93,7 +93,6 @@ function GameManagerPage() {
           <div className="manager-page__header">
               <div>
                   <h1>{game.name}</h1>
-                  <p>Manage and build your game here</p>
               </div>
 
               <div className="manager-page__actions">
