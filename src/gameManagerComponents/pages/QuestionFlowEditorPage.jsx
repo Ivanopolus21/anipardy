@@ -282,6 +282,10 @@ function QuestionFlowEditorPage() {
     return flowPages.find((page) => page.id === activePageId) || null;
   }, [flowPages, activePageId]);
 
+  const linkedBoardPageId = useMemo(() => {
+    return flowPages.find((page) => page.boardLink?.boardPageId)?.boardLink?.boardPageId || null;
+  }, [flowPages]);
+
   const fallbackBackgroundPage = useMemo(() => {
     if (!activePage || activePage.type !== "answer") return null;
 
@@ -587,9 +591,13 @@ function QuestionFlowEditorPage() {
             <button
               className="secondary-btn"
               type="button"
-              onClick={() => navigate(`/game/${id}`)}
+              onClick={() =>
+                linkedBoardPageId
+                  ? navigate(`/game/${id}/board/${linkedBoardPageId}`)
+                  : navigate(`/game/${id}`)
+              }
             >
-              Back to game
+              {linkedBoardPageId ? "Back to board" : "Back to game"}
             </button>
           </div>
         </div>

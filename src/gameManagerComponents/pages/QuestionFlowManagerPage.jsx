@@ -39,6 +39,10 @@ function QuestionFlowManagerPage() {
       .sort((a, b) => (a.order || 0) - (b.order || 0));
   }, [game, flowId]);
 
+  const linkedBoardPageId = useMemo(() => {
+    return flowPages.find((page) => page.boardLink?.boardPageId)?.boardLink?.boardPageId || null;
+  }, [flowPages]);
+
   function openStep(page) {
     if (!game) return;
 
@@ -77,8 +81,15 @@ function QuestionFlowManagerPage() {
         </div>
 
         <div className="manager-page__actions">
-          <button className="secondary-btn" onClick={() => navigate(`/game/${id}`)}>
-            Back to game
+          <button
+            className="secondary-btn"
+            onClick={() =>
+              linkedBoardPageId
+                ? navigate(`/game/${id}/board/${linkedBoardPageId}`)
+                : navigate(`/game/${id}`)
+            }
+          >
+            {linkedBoardPageId ? "Back to board" : "Back to game"}
           </button>
         </div>
       </div>
