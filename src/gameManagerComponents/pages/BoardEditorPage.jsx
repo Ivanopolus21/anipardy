@@ -157,11 +157,16 @@ function BoardEditorPage() {
     return category?.questions?.[selectedCell.rowIndex] || null;
   }, [boardPage, selectedCell]);
 
+  const linkedFlowPages =
+    selectedQuestion?.flowId ? flowMap.get(selectedQuestion.flowId) || [] : [];
+
+  const hasExistingFlow = linkedFlowPages.length > 0;
+
   const hasSavedPoints =
     selectedQuestion?.points !== null &&
     selectedQuestion?.points !== undefined;
 
-  const canCreateFlow = Boolean(selectedCell?.flowId || hasSavedPoints);
+  const canCreateFlow = Boolean(hasExistingFlow || hasSavedPoints);
 
   async function openOrCreateFlow() {
     if (!game || !boardPage || !selectedCell || isCreatingFlow) return;
@@ -171,7 +176,11 @@ function BoardEditorPage() {
 
     if (!category || !question) return;
 
-    if (question.flowId) {
+    const existingFlowPages = question.flowId
+      ? flowMap.get(question.flowId) || []
+      : [];
+
+    if (existingFlowPages.length > 0) {
       navigate(`/game/${id}/flow/${question.flowId}`);
       return;
     }
@@ -312,7 +321,9 @@ function BoardEditorPage() {
                 boardPage.categories.map((category) => {
                   const question = category.questions?.[rowIndex];
                   const flowPages = question?.flowId ? flowMap.get(question.flowId) || [] : [];
-                  const flowTitle = question?.flowId
+                  const hasFlow = flowPages.length > 0;
+
+                  const flowTitle = hasFlow
                     ? getFlowAutoTitle(flowPages, currency)
                     : "No flow yet";
 
@@ -409,7 +420,7 @@ function BoardEditorPage() {
                     onClick={openOrCreateFlow}
                     disabled={isSavingCell || isCreatingFlow || !canCreateFlow}
                   >
-                    {selectedCell.flowId
+                    {hasExistingFlow
                       ? "Open flow"
                       : isCreatingFlow
                         ? "Creating..."

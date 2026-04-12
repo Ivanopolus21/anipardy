@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getGameById } from "../../db.js";
+import { updateGame, getGameById } from "../../db.js";
 
 function buildManagerItems(pages = []) {
     const items = [];
@@ -86,6 +86,49 @@ function GameManagerPage() {
         navigate(`/game/${game.id}/page/${item.pages[0].id}`);
     }
 
+    async function removeManagerItem(item, event) {
+        event.stopPropagation();
+        if (!game) return;
+
+        const isBoard = item.itemType === "board";
+        const boardPageId = item.pages[0]?.id;
+
+        const confirmedMessage = isBoard
+          ? "Do you really want to remove the board? All corresponding question and answer pages will be removed as well."
+          : item.itemType === "question-flow"
+            ? "Do you really want to remove this question flow? All corresponding question and answer pages will be removed."
+            : "Do you really want to remove this page?";
+
+        const confirmed = window.confirm(confirmedMessage);
+        if (!confirmed) return;
+
+        const remainingPages = (game.gameConfig?.pages || []).filter((page) => {
+            if (isBoard) {
+                if (page.id === boardPageId) return false;
+                if (page.boardLink?.boardPageId === boardPageId) return false;
+                return true;
+            }
+
+            if (item.itemType === "question-flow") {
+                return page.flowId !== item.id;
+            }
+
+            return page.id !== item.id;
+        });
+
+        const updatedGame = {
+            ...game,
+            gameConfig: {
+                ...game.gameConfig,
+                pages: remainingPages,
+            },
+            updatedAt: Date.now(),
+        };
+
+        await updateGame(updatedGame);
+        setGame(updatedGame);
+    }
+
     if (!game) return <p>Loading...</p>;
 
     return (
@@ -155,7 +198,16 @@ function GameManagerPage() {
                                 className="page-card"
                                 onClick={() => openManagerItem(item)}
                               >
-                                  <h3>{item.pages[0].name || "The Board"}</h3>
+                                  <div className="page-card__top">
+                                      <h3>{item.pages[0].name || "The Board"}</h3>
+                                      <button
+                                        type="button"
+                                        className="page-card__delete-btn"
+                                        onClick={(e) => removeManagerItem(item, e)}
+                                      >
+                                          Remove
+                                      </button>
+                                  </div>
                                   <p>Board page with categories, question values and players' scores.</p>
                               </div>
                             );
@@ -168,7 +220,16 @@ function GameManagerPage() {
                                 className="page-card"
                                 onClick={() => openManagerItem(item)}
                               >
-                                  <h3>Supergame</h3>
+                                  <div className="page-card__top">
+                                      <h3>Supergame</h3>
+                                      <button
+                                        type="button"
+                                        className="page-card__delete-btn"
+                                        onClick={(e) => removeManagerItem(item, e)}
+                                      >
+                                          Remove
+                                      </button>
+                                  </div>
                                   <p>Special final or bonus round page.</p>
                               </div>
                             );
@@ -191,7 +252,16 @@ function GameManagerPage() {
                                 className="page-card page-card--flow"
                                 onClick={() => openManagerItem(item)}
                               >
-                                  <h3>{flowTitle}</h3>
+                                  <div className="page-card__top">
+                                      <h3>{flowTitle}</h3>
+                                      <button
+                                        type="button"
+                                        className="page-card__delete-btn"
+                                        onClick={(e) => removeManagerItem(item, e)}
+                                      >
+                                          Remove
+                                      </button>
+                                  </div>
                                   <p>
                                       {questionStepsCount} question page{questionStepsCount !== 1 ? "s" : ""}
                                       {" + "}

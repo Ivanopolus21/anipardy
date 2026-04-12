@@ -2311,3 +2311,26 @@ textarea {
   align-self: flex-start;
   margin-top: 4px;
 }
+
+.page-card__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.page-card__delete-btn {
+  flex: 0 0 auto;
+  background: transparent;
+  color: #b42318;
+  border: 1px solid rgba(180, 35, 24, 0.22);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.page-card__delete-btn:hover {
+  background: rgba(180, 35, 24, 0.08);
+}
