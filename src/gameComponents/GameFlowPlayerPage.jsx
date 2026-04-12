@@ -457,10 +457,23 @@ function GameFlowPlayerPage() {
         <FlowPageRenderer
           page={{
             ...currentPage,
+            enableModifier:
+              currentPage.type === "answer"
+                ? Boolean(firstQuestionPage?.enableModifier)
+                : currentPage.enableModifier,
+            modifierText:
+              currentPage.type === "answer"
+                ? firstQuestionPage?.modifierText || ""
+                : currentPage.modifierText,
+            isSecretModifier:
+              currentPage.type === "answer"
+                ? Boolean(firstQuestionPage?.isSecretModifier)
+                : Boolean(currentPage.isSecretModifier),
             timerSeconds: timeLeft,
             useCustomBackground: Boolean(backgroundSourcePage?.backgroundMediaId),
             backgroundMediaId: backgroundSourcePage?.backgroundMediaId || "",
-            backgroundName: backgroundSourcePage?.backgroundName || currentPage.backgroundName || "",
+            backgroundName:
+              backgroundSourcePage?.backgroundName || currentPage.backgroundName || "",
           }}
           pageTitle={pageTitle}
           mediaPreviewMap={mediaPreviewMap}

@@ -239,6 +239,7 @@ function QuestionFlowEditorPage() {
     backgroundName: "",
     enableModifier: false,
     modifierText: "",
+    isSecretModifier: false,
     enableTimer: false,
     timerSeconds: 60,
   });
@@ -347,6 +348,7 @@ function QuestionFlowEditorPage() {
       backgroundName: inheritedBackground.backgroundName,
       enableModifier: Boolean(activePage.enableModifier),
       modifierText: activePage.modifierText || "",
+      isSecretModifier: Boolean(activePage.isSecretModifier),
       enableTimer: Boolean(activePage.enableTimer),
       timerSeconds: activePage.timerSeconds ?? 60,
     });
@@ -550,6 +552,10 @@ function QuestionFlowEditorPage() {
           page.type === "question-step" && draft.enableModifier
             ? draft.modifierText
             : "",
+        isSecretModifier:
+          page.type === "question-step" && draft.enableModifier
+            ? Boolean(draft.isSecretModifier)
+            : false,
         enableTimer: page.type === "question-step" ? draft.enableTimer : false,
         timerSeconds:
           page.type === "question-step" && draft.enableTimer
@@ -816,21 +822,33 @@ function QuestionFlowEditorPage() {
                         setDraft((current) => ({
                           ...current,
                           enableModifier: e.target.checked,
+                          isSecretModifier: e.target.checked ? current.isSecretModifier : false,
                         }))
                       }
                     />
-                    Enable modifier
+                    <span>Enable modifier</span>
                   </label>
 
                   {draft.enableModifier ? (
-                    <div>
-                      <label className="flow-editor-label">Modifier text</label>
-                      <input
-                        type="text"
-                        value={draft.modifierText}
-                        onChange={(e) => updateDraftField("modifierText", e.target.value)}
-                        placeholder="Example: X2 points"
-                      />
+                    <div className="flow-editor-suboption-group">
+                      <div>
+                        <label className="flow-editor-label">Modifier text</label>
+                        <input
+                          type="text"
+                          value={draft.modifierText}
+                          onChange={(e) => updateDraftField("modifierText", e.target.value)}
+                          placeholder="Example: X2 points"
+                        />
+                      </div>
+
+                      <label className="flow-editor-checkbox flow-editor-checkbox--nested">
+                        <input
+                          type="checkbox"
+                          checked={draft.isSecretModifier}
+                          onChange={(e) => updateDraftField("isSecretModifier", e.target.checked)}
+                        />
+                        <span>Secret modifier</span>
+                      </label>
                     </div>
                   ) : null}
 
@@ -846,7 +864,7 @@ function QuestionFlowEditorPage() {
                         }))
                       }
                     />
-                    Enable 1 minute timer
+                    <span>Enable timer</span>
                   </label>
 
                   {draft.enableTimer ? (
@@ -908,6 +926,7 @@ function QuestionFlowEditorPage() {
                   backgroundMediaId: draft.backgroundMediaId,
                   enableModifier: draft.enableModifier,
                   modifierText: draft.modifierText,
+                  isSecretModifier: draft.isSecretModifier,
                   enableTimer: draft.enableTimer,
                   timerSeconds: draft.timerSeconds,
                   type: activePage.type,

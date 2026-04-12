@@ -2574,3 +2574,26 @@ textarea {
   font-weight: 700;
   opacity: 0.92;
 }
+
+.flow-editor-suboption-group {
+  margin: -4px 0 18px 28px;
+  padding: 14px 14px 14px 16px;
+  border-radius: 0 14px 14px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.flow-editor-checkbox--nested {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.flow-editor-checkbox--nested span {
+  color: var(--text-strong);
+}
+
+.flow-editor-suboption-group .flow-editor-label {
+  color: var(--text-strong);
+}

@@ -13,6 +13,13 @@ function FlowPageRenderer({
   const mediaItems = Array.isArray(page.mediaItems) ? page.mediaItems : [];
   const timerDisplay =
     typeof page.timerSeconds === "number" ? page.timerSeconds : 60;
+  const showModifier = Boolean(page.enableModifier && page.modifierText?.trim());
+  const isSecretModifier = Boolean(page.isSecretModifier);
+  const modifierDisplayText = showModifier
+    ? page.type === "question-step" && isSecretModifier
+      ? "Secret modifier!"
+      : page.modifierText
+    : "";
 
   const renderMediaItem = (item) => {
     const src = mediaPreviewMap[item.id] || "";
@@ -135,9 +142,9 @@ function FlowPageRenderer({
         <header className="flow-page-renderer__header">
           <div className="flow-page-renderer__topbar">
             <div className="flow-page-renderer__badges">
-              {page.enableModifier && page.modifierText ? (
+              {showModifier ? (
                 <span className="flow-page-renderer__badge">
-                  {page.modifierText}
+                  {modifierDisplayText}
                 </span>
               ) : null}
 
