@@ -67,62 +67,160 @@ function FlowPageRenderer({
     return null;
   };
 
-  const renderContent = () => {
-    if (page.layout === "media-only") {
+  const renderTextItem = (block, index) => {
+    if (block?.value) {
       return (
-        <div className="flow-page-renderer__media-only">
-          {mediaItems[0] ? (
-            renderMediaItem(mediaItems[0])
-          ) : (
-            <div className="flow-page-renderer__media-placeholder">
-              No media selected yet
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    if (page.layout === "text-media") {
-      return (
-        <div className="flow-page-renderer__split">
-          <div className="flow-page-renderer__text-column">
-            {textBlocks[0]?.value ? (
-              <div className="flow-page-renderer__main-text">
-                {textBlocks[0].value}
-              </div>
-            ) : (
-              <div className="flow-page-renderer__empty">
-                No text added yet
-              </div>
-            )}
-          </div>
-
-          <div className="flow-page-renderer__media-column">
-            {mediaItems[0] ? (
-              renderMediaItem(mediaItems[0])
-            ) : (
-              <div className="flow-page-renderer__media-placeholder">
-                No media selected yet
-              </div>
-            )}
-          </div>
+        <div key={block.id || index} className="flow-page-renderer__text-card">
+          <div className="flow-page-renderer__main-text">{block.value}</div>
         </div>
       );
     }
 
     return (
-      <div className="flow-page-renderer__text-only">
-        {textBlocks[0]?.value ? (
-          <div className="flow-page-renderer__main-text">
-            {textBlocks[0].value}
-          </div>
-        ) : (
-          <div className="flow-page-renderer__empty">
-            No text added yet
-          </div>
-        )}
+      <div key={block?.id || index} className="flow-page-renderer__empty">
+        No text added yet
       </div>
     );
+  };
+
+  const renderLayout = () => {
+    switch (page.layout) {
+      case "text-only":
+        return (
+          <div className="flow-page-renderer__text-only">
+            {textBlocks[0]?.value ? (
+              <div className="flow-page-renderer__main-text">{textBlocks[0].value}</div>
+            ) : (
+              <div className="flow-page-renderer__empty">No text added yet</div>
+            )}
+          </div>
+        );
+
+      case "texts-4":
+        return (
+          <div className="flow-page-renderer__text-grid flow-page-renderer__text-grid--4">
+            {textBlocks.map(renderTextItem)}
+          </div>
+        );
+
+      case "image-only":
+      case "audio-only":
+      case "video-only":
+        return (
+          <div className="flow-page-renderer__media-only">
+            {mediaItems[0] ? renderMediaItem(mediaItems[0]) : (
+              <div className="flow-page-renderer__media-placeholder">No media selected yet</div>
+            )}
+          </div>
+        );
+
+      case "image-text":
+      case "audio-text":
+        return (
+          <div className="flow-page-renderer__split">
+            <div className="flow-page-renderer__text-column">
+              {textBlocks[0]?.value ? (
+                <div className="flow-page-renderer__main-text">{textBlocks[0].value}</div>
+              ) : (
+                <div className="flow-page-renderer__empty">No text added yet</div>
+              )}
+            </div>
+            <div className="flow-page-renderer__media-column">
+              {mediaItems[0] ? renderMediaItem(mediaItems[0]) : (
+                <div className="flow-page-renderer__media-placeholder">No media selected yet</div>
+              )}
+            </div>
+          </div>
+        );
+
+      case "audio-image":
+        return (
+          <div className="flow-page-renderer__split flow-page-renderer__split--stacked-media">
+            <div className="flow-page-renderer__media-column">
+              {mediaItems.map((item, index) => (
+                <div key={item.id || index} className="flow-page-renderer__media-cell">
+                  {renderMediaItem(item)}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+
+      case "images-2":
+      case "images-3":
+      case "images-4":
+      case "images-8":
+        return (
+          <div
+            className={`flow-page-renderer__media-grid flow-page-renderer__media-grid--${mediaItems.length}`}
+          >
+            {mediaItems.map((item, index) => (
+              <div key={item.id || index} className="flow-page-renderer__media-cell">
+                {renderMediaItem(item)}
+              </div>
+            ))}
+          </div>
+        );
+
+      case "images-text-2":
+      case "images-text-3":
+      case "images-text-4":
+      case "images-text-8":
+        return (
+          <div
+            className={`flow-page-renderer__combo-grid flow-page-renderer__combo-grid--${Math.max(
+              textBlocks.length,
+              mediaItems.length
+            )}`}
+          >
+            {Array.from({ length: Math.max(textBlocks.length, mediaItems.length) }).map((_, index) => (
+              <div key={index} className="flow-page-renderer__combo-card">
+                <div className="flow-page-renderer__combo-media">
+                  {mediaItems[index]
+                    ? renderMediaItem(mediaItems[index])
+                    : <div className="flow-page-renderer__media-placeholder">No media selected yet</div>}
+                </div>
+                <div className="flow-page-renderer__combo-text">
+                  {textBlocks[index]?.value
+                    ? <div className="flow-page-renderer__main-text">{textBlocks[index].value}</div>
+                    : <div className="flow-page-renderer__empty">No text added yet</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+
+      case "videos-2-text":
+        return (
+          <div className="flow-page-renderer__video-text-layout">
+            <div className="flow-page-renderer__video-row">
+              {mediaItems.map((item, index) => (
+                <div key={item.id || index} className="flow-page-renderer__media-cell">
+                  {renderMediaItem(item)}
+                </div>
+              ))}
+            </div>
+            <div className="flow-page-renderer__video-text-box">
+              {textBlocks[0]?.value ? (
+                <div className="flow-page-renderer__main-text">{textBlocks[0].value}</div>
+              ) : (
+                <div className="flow-page-renderer__empty">No text added yet</div>
+              )}
+            </div>
+          </div>
+        );
+
+      default:
+        return (
+          <div className="flow-page-renderer__text-only">
+            {textBlocks[0]?.value ? (
+              <div className="flow-page-renderer__main-text">{textBlocks[0].value}</div>
+            ) : (
+              <div className="flow-page-renderer__empty">No text added yet</div>
+            )}
+          </div>
+        );
+    }
   };
 
   return (
@@ -151,7 +249,7 @@ function FlowPageRenderer({
               {mode !== "gameplay" && page.enableTimer ? (
                 <span className="flow-page-renderer__badge flow-page-renderer__badge--timer">
                   {timerDisplay}s timer
-                 </span>
+                </span>
               ) : null}
             </div>
           </div>
@@ -161,7 +259,7 @@ function FlowPageRenderer({
           </h2>
         </header>
 
-        <div className="flow-page-renderer__body">{renderContent()}</div>
+        <div className="flow-page-renderer__body">{renderLayout()}</div>
 
         {page.type === "answer" && (page.answer || page.explanation) ? (
           <footer className="flow-page-renderer__answer-box">

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import {useLocation, useNavigate, useParams} from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   getGameById,
   updateGame,
@@ -9,6 +9,143 @@ import {
 import FlowPageRenderer from "../../FlowPageRenderer.jsx";
 import "../../index.css";
 
+const LAYOUT_GROUPS = [
+  { id: "basic", label: "Basic" },
+  { id: "image", label: "Image" },
+  { id: "mixed", label: "Mixed" },
+  { id: "audio-video", label: "Audio / Video" },
+];
+
+const LAYOUT_OPTIONS = {
+  "text-only": {
+    label: "Text only",
+    group: "basic",
+    textCount: 1,
+    mediaSlots: [],
+    description: "One text block.",
+  },
+  "texts-4": {
+    label: "4 texts",
+    group: "basic",
+    textCount: 4,
+    mediaSlots: [],
+    description: "Four separate text blocks.",
+  },
+  "image-only": {
+    label: "Only image",
+    group: "image",
+    textCount: 0,
+    mediaSlots: ["image"],
+    description: "One image or GIF.",
+  },
+  "images-2": {
+    label: "2 images",
+    group: "image",
+    textCount: 0,
+    mediaSlots: ["image", "image"],
+    description: "Two image slots.",
+  },
+  "images-3": {
+    label: "3 images",
+    group: "image",
+    textCount: 0,
+    mediaSlots: ["image", "image", "image"],
+    description: "Three image slots.",
+  },
+  "images-4": {
+    label: "4 images",
+    group: "image",
+    textCount: 0,
+    mediaSlots: ["image", "image", "image", "image"],
+    description: "Four image slots.",
+  },
+  "images-8": {
+    label: "8 images",
+    group: "image",
+    textCount: 0,
+    mediaSlots: ["image", "image", "image", "image", "image", "image", "image", "image"],
+    description: "Eight image slots.",
+  },
+  "image-text": {
+    label: "Image + text",
+    group: "mixed",
+    textCount: 1,
+    mediaSlots: ["image"],
+    description: "One text block and one image.",
+  },
+  "audio-image": {
+    label: "Audio + image",
+    group: "mixed",
+    textCount: 0,
+    mediaSlots: ["audio", "image"],
+    description: "One audio slot and one image slot.",
+  },
+  "images-text-2": {
+    label: "2 images + 2 texts",
+    group: "mixed",
+    textCount: 2,
+    mediaSlots: ["image", "image"],
+    description: "Two paired text and image items.",
+  },
+  "images-text-3": {
+    label: "3 images + 3 texts",
+    group: "mixed",
+    textCount: 3,
+    mediaSlots: ["image", "image", "image"],
+    description: "Three paired text and image items.",
+  },
+  "images-text-4": {
+    label: "4 images + 4 texts",
+    group: "mixed",
+    textCount: 4,
+    mediaSlots: ["image", "image", "image", "image"],
+    description: "Four paired text and image items.",
+  },
+  "images-text-8": {
+    label: "8 images + 8 texts",
+    group: "mixed",
+    textCount: 8,
+    mediaSlots: ["image", "image", "image", "image", "image", "image", "image", "image"],
+    description: "Eight paired text and image items.",
+  },
+  "audio-only": {
+    label: "Only audio",
+    group: "audio-video",
+    textCount: 0,
+    mediaSlots: ["audio"],
+    description: "One audio clip.",
+  },
+  "audio-text": {
+    label: "Audio + text",
+    group: "audio-video",
+    textCount: 1,
+    mediaSlots: ["audio"],
+    description: "One text block and one audio clip.",
+  },
+  "video-only": {
+    label: "Only video",
+    group: "audio-video",
+    textCount: 0,
+    mediaSlots: ["video"],
+    description: "One video clip.",
+  },
+  "videos-2-text": {
+    label: "2 videos + text",
+    group: "audio-video",
+    textCount: 1,
+    mediaSlots: ["video", "video"],
+    description: "Two videos with one text block.",
+  },
+};
+
+function getLayoutDefinition(layout) {
+  return LAYOUT_OPTIONS[layout] || LAYOUT_OPTIONS["text-only"];
+}
+
+function getDefaultGroupForLayout(layout) {
+  return getLayoutDefinition(layout).group;
+}
+
 function createEmptyTextBlock() {
   return {
     id: crypto.randomUUID(),
@@ -16,10 +153,10 @@ function createEmptyTextBlock() {
   };
 }
 
-function createEmptyMediaItem() {
+function createEmptyMediaItem(type = "image") {
   return {
     id: crypto.randomUUID(),
-    type: "image",
+    type,
     mediaId: "",
     name: "",
     mimeType: "",
@@ -30,10 +167,10 @@ function createEmptyMediaItem() {
   };
 }
 
-function normalizeMediaItem(item = {}) {
+function normalizeMediaItem(item = {}, forcedType) {
   return {
     id: item.id || crypto.randomUUID(),
-    type: item.type || "image",
+    type: forcedType || item.type || "image",
     mediaId: item.mediaId || "",
     name: item.name || "",
     mimeType: item.mimeType || "",
@@ -42,6 +179,22 @@ function normalizeMediaItem(item = {}) {
     width: item.width ?? null,
     height: item.height ?? null,
   };
+}
+
+function buildSizedTextBlocks(sourceBlocks = [], count = 0) {
+  return Array.from({ length: count }, (_, index) =>
+    sourceBlocks[index]
+      ? { ...sourceBlocks[index], id: sourceBlocks[index].id || crypto.randomUUID() }
+      : createEmptyTextBlock()
+  );
+}
+
+function buildSizedMediaItems(sourceItems = [], mediaSlots = []) {
+  return mediaSlots.map((type, index) =>
+    sourceItems[index]
+      ? normalizeMediaItem(sourceItems[index], type)
+      : createEmptyMediaItem(type)
+  );
 }
 
 function readFileAsDataURL(file) {
@@ -164,39 +317,24 @@ async function createStoredMediaRecord(file) {
 
 function normalizePageContent(page) {
   const layout = page.layout || "text-only";
+  const definition = getLayoutDefinition(layout);
 
   const existingText =
     Array.isArray(page.textBlocks) && page.textBlocks.length > 0
       ? page.textBlocks
       : page.text
         ? [{ id: crypto.randomUUID(), value: page.text }]
-        : [createEmptyTextBlock()];
+        : [];
 
   const existingMedia =
     Array.isArray(page.mediaItems) && page.mediaItems.length > 0
-      ? page.mediaItems.map(normalizeMediaItem)
-      : [createEmptyMediaItem()];
-
-  if (layout === "text-only") {
-    return {
-      layout,
-      textBlocks: [existingText[0] || createEmptyTextBlock()],
-      mediaItems: [],
-    };
-  }
-
-  if (layout === "media-only") {
-    return {
-      layout,
-      textBlocks: [],
-      mediaItems: [existingMedia[0] || createEmptyMediaItem()],
-    };
-  }
+      ? page.mediaItems
+      : [];
 
   return {
-    layout: "text-media",
-    textBlocks: [existingText[0] || createEmptyTextBlock()],
-    mediaItems: [existingMedia[0] || createEmptyMediaItem()],
+    layout,
+    textBlocks: buildSizedTextBlocks(existingText, definition.textCount),
+    mediaItems: buildSizedMediaItems(existingMedia, definition.mediaSlots),
   };
 }
 
@@ -232,6 +370,7 @@ function QuestionFlowEditorPage() {
 
   const [game, setGame] = useState(null);
   const [activePageId, setActivePageId] = useState("");
+  const [selectedLayoutGroup, setSelectedLayoutGroup] = useState("basic");
   const [draft, setDraft] = useState({
     titleMode: "auto",
     customTitle: "",
@@ -287,10 +426,6 @@ function QuestionFlowEditorPage() {
     return flowPages.find((page) => page.id === activePageId) || null;
   }, [flowPages, activePageId]);
 
-  const linkedBoardPageId = useMemo(() => {
-    return flowPages.find((page) => page.boardLink?.boardPageId)?.boardLink?.boardPageId || null;
-  }, [flowPages]);
-
   const fallbackBackgroundPage = useMemo(() => {
     if (!activePage || activePage.type !== "answer") return null;
 
@@ -320,6 +455,16 @@ function QuestionFlowEditorPage() {
     draft.titleMode === "custom" && draft.customTitle.trim()
       ? draft.customTitle.trim()
       : autoTitle;
+
+  const currentLayoutDefinition = useMemo(() => {
+    return getLayoutDefinition(draft.layout);
+  }, [draft.layout]);
+
+  const visibleLayoutOptions = useMemo(() => {
+    return Object.entries(LAYOUT_OPTIONS).filter(
+      ([, option]) => option.group === selectedLayoutGroup
+    );
+  }, [selectedLayoutGroup]);
 
   useEffect(() => {
     if (!activePage) return;
@@ -356,6 +501,7 @@ function QuestionFlowEditorPage() {
       enableTimer: Boolean(activePage.enableTimer),
       timerSeconds: activePage.timerSeconds ?? 60,
     });
+    setSelectedLayoutGroup(getDefaultGroupForLayout(normalized.layout));
   }, [activePage, fallbackBackgroundPage]);
 
   useEffect(() => {
@@ -441,29 +587,14 @@ function QuestionFlowEditorPage() {
   }
 
   function handleLayoutChange(nextLayout) {
-    setDraft((current) => {
-      const next = {
-        ...current,
-        layout: nextLayout,
-      };
+    const definition = getLayoutDefinition(nextLayout);
 
-      if (nextLayout === "text-only") {
-        next.textBlocks =
-          current.textBlocks.length > 0 ? [current.textBlocks[0]] : [createEmptyTextBlock()];
-        next.mediaItems = [];
-      } else if (nextLayout === "media-only") {
-        next.textBlocks = [];
-        next.mediaItems =
-          current.mediaItems.length > 0 ? [current.mediaItems[0]] : [createEmptyMediaItem()];
-      } else {
-        next.textBlocks =
-          current.textBlocks.length > 0 ? [current.textBlocks[0]] : [createEmptyTextBlock()];
-        next.mediaItems =
-          current.mediaItems.length > 0 ? [current.mediaItems[0]] : [createEmptyMediaItem()];
-      }
-
-      return next;
-    });
+    setDraft((current) => ({
+      ...current,
+      layout: nextLayout,
+      textBlocks: buildSizedTextBlocks(current.textBlocks, definition.textCount),
+      mediaItems: buildSizedMediaItems(current.mediaItems, definition.mediaSlots),
+    }));
   }
 
   function updateTextBlock(blockId, value) {
@@ -538,15 +669,13 @@ function QuestionFlowEditorPage() {
     const updatedPages = game.gameConfig.pages.map((page) => {
       if (page.id !== activePage.id) return page;
 
-      const sanitizedMediaItems = draft.mediaItems;
-
-      const commonFields = {
+      return {
         ...page,
         titleMode: draft.titleMode,
         customTitle: draft.titleMode === "custom" ? draft.customTitle : "",
         layout: draft.layout,
         textBlocks: draft.textBlocks,
-        mediaItems: sanitizedMediaItems,
+        mediaItems: draft.mediaItems,
         text: draft.textBlocks?.[0]?.value || "",
         useCustomBackground: draft.useCustomBackground,
         backgroundMediaId: draft.useCustomBackground ? draft.backgroundMediaId : "",
@@ -566,8 +695,6 @@ function QuestionFlowEditorPage() {
             ? draft.timerSeconds || 60
             : 60,
       };
-
-      return commonFields;
     });
 
     const updatedGame = {
@@ -590,10 +717,8 @@ function QuestionFlowEditorPage() {
     (page) => page.type === "question-step"
   ).length;
 
-  const mediaItem = draft.mediaItems[0] || null;
   const isAnswerPage = activePage.type === "answer";
   const isQuestionPage = activePage.type === "question-step";
-  const mediaPreviewUrl = mediaItem ? mediaPreviews[mediaItem.id] || "" : "";
   const mediaPreviewMap = Object.fromEntries(
     draft.mediaItems.map((item) => [item.id, mediaPreviews[item.id] || ""])
   );
@@ -676,101 +801,143 @@ function QuestionFlowEditorPage() {
               </label>
             )}
 
-            <label className="flow-editor-field">
-              <span>Layout</span>
-              <select
-                value={draft.layout}
-                onChange={(e) => handleLayoutChange(e.target.value)}
-              >
-                <option value="text-only">Text only</option>
-                <option value="media-only">Media only</option>
-                <option value="text-media">1 text + 1 media</option>
-              </select>
-            </label>
+            <div className="flow-editor-section">
+              <h3>Layout</h3>
 
-            {(draft.layout === "text-only" || draft.layout === "text-media") && (
-              <div className="flow-editor-fields">
-                <label className="flow-editor-field">
-                  <span>{isAnswerPage ? "Main text" : "Question text"}</span>
-                  <textarea
-                    value={draft.textBlocks[0]?.value || ""}
-                    onChange={(e) =>
-                      updateTextBlock(draft.textBlocks[0].id, e.target.value)
-                    }
-                    placeholder={
-                      isAnswerPage
-                        ? "Write the main answer-page text"
-                        : "Write the question, clue, or prompt shown to players"
-                    }
-                  />
-                </label>
+              <div className="flow-editor-layout-groups" role="tablist" aria-label="Layout groups">
+                {LAYOUT_GROUPS.map((group) => (
+                  <button
+                    key={group.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={selectedLayoutGroup === group.id}
+                    className={`flow-editor-layout-group ${
+                      selectedLayoutGroup === group.id
+                        ? "flow-editor-layout-group--active"
+                        : ""
+                    }`}
+                    onClick={() => setSelectedLayoutGroup(group.id)}
+                  >
+                    {group.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flow-editor-layout-grid">
+                {visibleLayoutOptions.map(([layoutKey, option]) => (
+                  <button
+                    key={layoutKey}
+                    type="button"
+                    className={`flow-editor-layout-card ${
+                      draft.layout === layoutKey ? "flow-editor-layout-card--active" : ""
+                    }`}
+                    onClick={() => handleLayoutChange(layoutKey)}
+                  >
+                    <span className="flow-editor-layout-card__title">{option.label}</span>
+                    <span className="flow-editor-layout-card__meta">{option.description}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {currentLayoutDefinition.textCount > 0 && (
+              <div className="flow-editor-section">
+                <h3>Text content</h3>
+                <div className="flow-editor-stack">
+                  {draft.textBlocks.map((block, index) => (
+                    <label className="flow-editor-field" key={block.id}>
+                      <span>
+                        {currentLayoutDefinition.textCount === 1
+                          ? isAnswerPage
+                            ? "Main text"
+                            : "Question text"
+                          : `Text block ${index + 1}`}
+                      </span>
+                      <textarea
+                        value={block.value || ""}
+                        onChange={(e) => updateTextBlock(block.id, e.target.value)}
+                        placeholder={
+                          isAnswerPage
+                            ? "Write the text shown on the answer page"
+                            : "Write the text shown to players"
+                        }
+                      />
+                    </label>
+                  ))}
+                </div>
               </div>
             )}
 
-            {(draft.layout === "media-only" || draft.layout === "text-media") && mediaItem && (
-              <div className="flow-editor-fields">
-                <label className="flow-editor-field">
-                  <span>Media type</span>
-                  <select
-                    value={mediaItem.type}
-                    onChange={(e) => updateMediaItem(mediaItem.id, "type", e.target.value)}
-                  >
-                    <option value="image">Image / GIF</option>
-                    <option value="audio">Audio</option>
-                    <option value="video">Video</option>
-                  </select>
-                </label>
-
-                <label className="flow-editor-field">
-                  <span>Upload file</span>
-                  <input
-                    type="file"
-                    accept={
-                      mediaItem.type === "image"
+            {currentLayoutDefinition.mediaSlots.length > 0 && (
+              <div className="flow-editor-section">
+                <h3>Media content</h3>
+                <div className="flow-editor-stack">
+                  {draft.mediaItems.map((item, index) => {
+                    const previewUrl = mediaPreviews[item.id] || "";
+                    const accept =
+                      item.type === "image"
                         ? "image/*,.gif"
-                        : mediaItem.type === "audio"
+                        : item.type === "audio"
                           ? "audio/*"
-                          : "video/*,.mp4,.mkv"
-                    }
-                    onChange={(e) => handleMediaFileChange(mediaItem.id, e.target.files?.[0])}
-                  />
-                </label>
+                          : "video/*,.mp4,.mkv";
 
-                {mediaItem.name && (
-                  <div className="flow-editor-file-note">
-                    Selected file: {mediaItem.name}
-                  </div>
-                )}
+                    return (
+                      <div className="flow-editor-media-card" key={item.id}>
+                        <div className="flow-editor-media-card__header">
+                          <h4>Media slot {index + 1}</h4>
+                          <span>{item.type}</span>
+                        </div>
 
-                {mediaItem.type === "image" && (
-                  <label className="flow-editor-field">
-                    <span>Alt text</span>
-                    <input
-                      type="text"
-                      value={mediaItem.alt || ""}
-                      onChange={(e) => updateMediaItem(mediaItem.id, "alt", e.target.value)}
-                      placeholder="Describe the image briefly"
-                    />
-                  </label>
-                )}
+                        <label className="flow-editor-field">
+                          <span>Upload file</span>
+                          <input
+                            type="file"
+                            accept={accept}
+                            onChange={(e) =>
+                              handleMediaFileChange(item.id, e.target.files?.[0])
+                            }
+                          />
+                        </label>
 
-                {mediaPreviewUrl && mediaItem.type === "image" && (
-                  <div className="flow-editor-preview">
-                    <img src={mediaPreviewUrl} alt={mediaItem.alt || ""} />
-                  </div>
-                )}
+                        {item.name && (
+                          <div className="flow-editor-file-note">
+                            Selected file: {item.name}
+                          </div>
+                        )}
 
-                {mediaPreviewUrl && mediaItem.type === "audio" && (
-                  <div className="flow-editor-preview">
-                    <audio controls src={mediaPreviewUrl} />
-                  </div>
-                )}
+                        {item.type === "image" && (
+                          <label className="flow-editor-field">
+                            <span>Alt text</span>
+                            <input
+                              type="text"
+                              value={item.alt || ""}
+                              onChange={(e) => updateMediaItem(item.id, "alt", e.target.value)}
+                              placeholder="Describe the image briefly"
+                            />
+                          </label>
+                        )}
 
-                {mediaPreviewUrl && mediaItem.type === "video" && (
-                  <div className="flow-editor-preview">
-                    <video controls src={mediaPreviewUrl} />
-                  </div>
-                )}
+                        {previewUrl && item.type === "image" && (
+                          <div className="flow-editor-preview">
+                            <img src={previewUrl} alt={item.alt || ""} />
+                          </div>
+                        )}
+
+                        {previewUrl && item.type === "audio" && (
+                          <div className="flow-editor-preview">
+                            <audio controls src={previewUrl} />
+                          </div>
+                        )}
+
+                        {previewUrl && item.type === "video" && (
+                          <div className="flow-editor-preview">
+                            <video controls src={previewUrl} />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
@@ -795,100 +962,95 @@ function QuestionFlowEditorPage() {
                     accept="image/*,video/*"
                     onChange={(e) => handleBackgroundFileChange(e.target.files?.[0])}
                   />
-
-                  {/*{draft.backgroundName ? (*/}
-                  {/*  <div className="flow-editor-file-note">*/}
-                  {/*    Background file: {draft.backgroundName}*/}
-                  {/*  </div>*/}
-                  {/*) : null}*/}
                 </div>
               ) : null}
             </div>
 
             {isQuestionPage && (
-            <div className="flow-editor-section">
-              <button
-                type="button"
-                className="flow-editor-advanced-toggle"
-                onClick={() => setShowAdvancedFeatures((current) => !current)}
-                aria-expanded={showAdvancedFeatures}
-              >
-                Advanced features
-              </button>
+              <div className="flow-editor-section">
+                <button
+                  type="button"
+                  className="flow-editor-advanced-toggle"
+                  onClick={() => setShowAdvancedFeatures((current) => !current)}
+                  aria-expanded={showAdvancedFeatures}
+                >
+                  Advanced features
+                </button>
 
-              {showAdvancedFeatures ? (
-                <div className="flow-editor-advanced-panel">
-                  <label className="flow-editor-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={draft.enableModifier}
-                      onChange={(e) =>
-                        setDraft((current) => ({
-                          ...current,
-                          enableModifier: e.target.checked,
-                          isSecretModifier: e.target.checked ? current.isSecretModifier : false,
-                        }))
-                      }
-                    />
-                    <span>Enable modifier</span>
-                  </label>
-
-                  {draft.enableModifier ? (
-                    <div className="flow-editor-suboption-group">
-                      <div>
-                        <label className="flow-editor-label">Modifier text</label>
-                        <input
-                          type="text"
-                          value={draft.modifierText}
-                          onChange={(e) => updateDraftField("modifierText", e.target.value)}
-                          placeholder="Example: X2 points"
-                        />
-                      </div>
-
-                      <label className="flow-editor-checkbox flow-editor-checkbox--nested">
-                        <input
-                          type="checkbox"
-                          checked={draft.isSecretModifier}
-                          onChange={(e) => updateDraftField("isSecretModifier", e.target.checked)}
-                        />
-                        <span>Make it "Secret modifier" (shown on Answer page only)</span>
-                      </label>
-                    </div>
-                  ) : null}
-
-                  <label className="flow-editor-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={draft.enableTimer}
-                      onChange={(e) =>
-                        setDraft((current) => ({
-                          ...current,
-                          enableTimer: e.target.checked,
-                          timerSeconds: e.target.checked ? 60 : current.timerSeconds,
-                        }))
-                      }
-                    />
-                    <span>Enable timer</span>
-                  </label>
-
-                  {draft.enableTimer ? (
-                    <div>
-                      <label className="flow-editor-label">Timer length in seconds</label>
+                {showAdvancedFeatures ? (
+                  <div className="flow-editor-advanced-panel">
+                    <label className="flow-editor-checkbox">
                       <input
-                        type="number"
-                        min="5"
-                        max="600"
-                        value={draft.timerSeconds}
+                        type="checkbox"
+                        checked={draft.enableModifier}
                         onChange={(e) =>
-                          updateDraftField("timerSeconds", Number(e.target.value) || 60)
+                          setDraft((current) => ({
+                            ...current,
+                            enableModifier: e.target.checked,
+                            isSecretModifier: e.target.checked ? current.isSecretModifier : false,
+                          }))
                         }
                       />
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
+                      <span>Enable modifier</span>
+                    </label>
+
+                    {draft.enableModifier ? (
+                      <div className="flow-editor-suboption-group">
+                        <div>
+                          <label className="flow-editor-label">Modifier text</label>
+                          <input
+                            type="text"
+                            value={draft.modifierText}
+                            onChange={(e) => updateDraftField("modifierText", e.target.value)}
+                            placeholder="Example: X2 points"
+                          />
+                        </div>
+
+                        <label className="flow-editor-checkbox flow-editor-checkbox--nested">
+                          <input
+                            type="checkbox"
+                            checked={draft.isSecretModifier}
+                            onChange={(e) => updateDraftField("isSecretModifier", e.target.checked)}
+                          />
+                          <span>Make it "Secret modifier" (shown on Answer page only)</span>
+                        </label>
+                      </div>
+                    ) : null}
+
+                    <label className="flow-editor-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={draft.enableTimer}
+                        onChange={(e) =>
+                          setDraft((current) => ({
+                            ...current,
+                            enableTimer: e.target.checked,
+                            timerSeconds: e.target.checked ? 60 : current.timerSeconds,
+                          }))
+                        }
+                      />
+                      <span>Enable timer</span>
+                    </label>
+
+                    {draft.enableTimer ? (
+                      <div>
+                        <label className="flow-editor-label">Timer length in seconds</label>
+                        <input
+                          type="number"
+                          min="5"
+                          max="600"
+                          value={draft.timerSeconds}
+                          onChange={(e) =>
+                            updateDraftField("timerSeconds", Number(e.target.value) || 60)
+                          }
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
             )}
+
             <div className="flow-editor-footer">
               <button className="primary-btn" type="submit" disabled={isSaving}>
                 {isSaving ? "Saving..." : "Save changes"}
