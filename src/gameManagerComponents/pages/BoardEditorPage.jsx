@@ -110,27 +110,55 @@ function BoardEditorPage() {
     const parsedPoints =
       pointsInput.trim() === "" ? null : Math.max(0, Number(pointsInput));
 
+    const nextPoints = Number.isFinite(parsedPoints) ? parsedPoints : null;
+
+    const category = boardPage.categories.find(
+      (item) => item.id === selectedCell.categoryId
+    );
+
+    const nextCategoryName = category?.name || selectedCell.categoryName || "Category";
+
+    const question = category?.questions?.[selectedCell.rowIndex];
+    const linkedFlowId = question?.flowId || selectedCell.flowId || null;
+
     const updatedPages = game.gameConfig.pages.map((page) => {
-      if (page.id !== boardPage.id) return page;
+      if (page.id === boardPage.id) {
+        return {
+          ...page,
+          categories: page.categories.map((category) => {
+            if (category.id !== selectedCell.categoryId) return category;
 
-      return {
-        ...page,
-        categories: page.categories.map((category) => {
-          if (category.id !== selectedCell.categoryId) return category;
+            return {
+              ...category,
+              questions: category.questions.map((question, index) => {
+                if (index !== selectedCell.rowIndex) return question;
 
-          return {
-            ...category,
-            questions: category.questions.map((question, index) => {
-              if (index !== selectedCell.rowIndex) return question;
+                return {
+                  ...question,
+                  points: nextPoints,
+                };
+              }),
+            };
+          }),
+        };
+      }
 
-              return {
-                ...question,
-                points: Number.isFinite(parsedPoints) ? parsedPoints : null,
-              };
-            }),
-          };
-        }),
-      };
+      if (
+        linkedFlowId &&
+        page.flowId === linkedFlowId &&
+        page.boardLink
+      ) {
+        return {
+          ...page,
+          boardLink: {
+            ...page.boardLink,
+            categoryName: nextCategoryName,
+            clueValue: nextPoints,
+          },
+        };
+      }
+
+      return page;
     });
 
     const updatedGame = {
