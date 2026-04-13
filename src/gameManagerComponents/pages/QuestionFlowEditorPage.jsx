@@ -711,7 +711,17 @@ function QuestionFlowEditorPage() {
     setIsSaving(false);
   }
 
-  if (!game || !activePage) return <p>Loading...</p>;
+  if (!game || !activePage) {
+    return (
+      <section className="flow-editor-page">
+        <div className="flow-editor-shell">
+          <div className="flow-editor-card">
+            <p>Loading...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   const questionPagesCount = flowPages.filter(
     (page) => page.type === "question-step"
