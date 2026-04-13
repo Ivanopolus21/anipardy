@@ -548,7 +548,7 @@ function QuestionFlowEditorPage() {
 
   useEffect(() => {
     let isCancelled = false;
-    let objectUrl = "";
+    let nextObjectUrl = "";
 
     async function loadBackgroundPreview() {
       if (!effectiveBackgroundMediaId) {
@@ -557,25 +557,39 @@ function QuestionFlowEditorPage() {
       }
 
       const mediaRecord = await getMediaById(effectiveBackgroundMediaId);
-      if (!mediaRecord?.blob) {
-        setBackgroundPreviewUrl("");
-        return;
-      }
+      if (!mediaRecord?.blob) return;
 
-      objectUrl = URL.createObjectURL(mediaRecord.blob);
+      nextObjectUrl = URL.createObjectURL(mediaRecord.blob);
 
-      if (!isCancelled) {
-        setBackgroundPreviewUrl(objectUrl);
-      }
+      const img = new Image();
+      img.onload = () => {
+        if (isCancelled) {
+          URL.revokeObjectURL(nextObjectUrl);
+          return;
+        }
+
+        setBackgroundPreviewUrl((previousUrl) => {
+          if (previousUrl && previousUrl !== nextObjectUrl) {
+            URL.revokeObjectURL(previousUrl);
+          }
+          return nextObjectUrl;
+        });
+      };
+
+      img.onerror = () => {
+        if (!isCancelled) {
+          setBackgroundPreviewUrl((previousUrl) => previousUrl || "");
+        }
+        URL.revokeObjectURL(nextObjectUrl);
+      };
+
+      img.src = nextObjectUrl;
     }
 
     loadBackgroundPreview();
 
     return () => {
       isCancelled = true;
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-      }
     };
   }, [effectiveBackgroundMediaId]);
 
