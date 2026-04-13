@@ -228,13 +228,15 @@ function FlowPageRenderer({
       className={`flow-page-renderer flow-page-renderer--${mode}`}
       aria-label={mode === "gameplay" ? "Game page" : "Page preview"}
     >
-      {page.useCustomBackground && backgroundPreviewUrl ? (
-        <div
-          className="flow-page-renderer__background"
-          style={{ backgroundImage: `url(${backgroundPreviewUrl})` }}
-          aria-hidden="true"
-        />
-      ) : null}
+      <div
+        className="flow-page-renderer__background"
+        style={
+          page.useCustomBackground && backgroundPreviewUrl
+            ? { backgroundImage: `url(${backgroundPreviewUrl})`, opacity: 1 }
+            : { backgroundImage: "none", opacity: 0 }
+        }
+        aria-hidden="true"
+      />
 
       <div className="flow-page-renderer__overlay">
         <header className="flow-page-renderer__header">

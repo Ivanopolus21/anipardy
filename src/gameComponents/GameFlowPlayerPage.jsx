@@ -254,38 +254,58 @@ function GameFlowPlayerPage() {
     };
   }, [currentPage?.id, currentPage?.mediaItems]);
 
+  const effectiveBackgroundMediaId = backgroundSourcePage?.backgroundMediaId || "";
+
   useEffect(() => {
     let isCancelled = false;
-    let objectUrl = "";
+    let nextObjectUrl = "";
 
     async function loadBackgroundPreview() {
-      if (!backgroundSourcePage?.backgroundMediaId) {
-        setBackgroundPreviewUrl("");
+      if (!effectiveBackgroundMediaId) {
+        setBackgroundPreviewUrl((previousUrl) => {
+          if (previousUrl) {
+            URL.revokeObjectURL(previousUrl);
+          }
+          return "";
+        });
         return;
       }
 
-      const mediaRecord = await getMediaById(backgroundSourcePage.backgroundMediaId);
+      const mediaRecord = await getMediaById(effectiveBackgroundMediaId);
       if (!mediaRecord?.blob) {
-        setBackgroundPreviewUrl("");
         return;
       }
 
-      objectUrl = URL.createObjectURL(mediaRecord.blob);
+      nextObjectUrl = URL.createObjectURL(mediaRecord.blob);
 
-      if (!isCancelled) {
-        setBackgroundPreviewUrl(objectUrl);
-      }
+      const img = new Image();
+      img.onload = () => {
+        if (isCancelled) {
+          URL.revokeObjectURL(nextObjectUrl);
+          return;
+        }
+
+        setBackgroundPreviewUrl((previousUrl) => {
+          if (previousUrl && previousUrl !== nextObjectUrl) {
+            URL.revokeObjectURL(previousUrl);
+          }
+          return nextObjectUrl;
+        });
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(nextObjectUrl);
+      };
+
+      img.src = nextObjectUrl;
     }
 
     loadBackgroundPreview();
 
     return () => {
       isCancelled = true;
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-      }
     };
-  }, [backgroundSourcePage]);
+  }, [effectiveBackgroundMediaId]);
 
   function startTimer() {
     if (!currentPage?.enableTimer || timerRunning || timeLeft <= 0) return;
