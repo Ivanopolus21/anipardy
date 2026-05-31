@@ -140,6 +140,23 @@ function FlowPageRenderer({
         );
 
       case "image-text":
+        return (
+          <div className="flow-page-renderer__stacked-layout">
+            <div className="flow-page-renderer__media-column">
+              {mediaItems[0] ? renderMediaItem(mediaItems[0]) : (
+                <div className="flow-page-renderer__media-placeholder">No media selected yet</div>
+              )}
+            </div>
+            <div className="flow-page-renderer__text-column">
+              {textBlocks[0]?.value ? (
+                <div className="flow-page-renderer__main-text">{textBlocks[0].value}</div>
+              ) : (
+                <div className="flow-page-renderer__empty">No text added yet</div>
+              )}
+            </div>
+          </div>
+        );
+
       case "audio-text":
         return (
           <div className="flow-page-renderer__split">
