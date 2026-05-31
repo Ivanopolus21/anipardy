@@ -426,26 +426,51 @@ function QuestionFlowEditorPage() {
     return flowPages.find((page) => page.id === activePageId) || null;
   }, [flowPages, activePageId]);
 
-  const fallbackBackgroundPage = useMemo(() => {
-    if (!activePage || activePage.type !== "answer") return null;
+  const linkedCategory = useMemo(() => {
+    if (!game || !activePage?.boardLink?.boardPageId || !activePage?.boardLink?.categoryId) {
+      return null;
+    }
+
+    const linkedBoardPage = (game.gameConfig?.pages || []).find(
+      (page) => page.id === activePage.boardLink.boardPageId
+    );
 
     return (
-      flowPages.find(
-        (page) =>
-          page.type === "question-step" &&
-          page.useCustomBackground &&
-          page.backgroundMediaId
+      linkedBoardPage?.categories?.find(
+        (category) => category.id === activePage.boardLink.categoryId
       ) || null
     );
-  }, [activePage, flowPages]);
+  }, [game, activePage]);
+
+  const questionPage = useMemo(() => {
+    return flowPages.find((page) => page.type === "question-step") || null;
+  }, [flowPages]);
+
+  const questionResolvedBackgroundMediaId = useMemo(() => {
+    if (questionPage?.useCustomBackground && questionPage.backgroundMediaId) {
+      return questionPage.backgroundMediaId;
+    }
+
+    return linkedCategory?.columnBackgroundMediaId || "";
+  }, [questionPage, linkedCategory]);
 
   const effectiveBackgroundMediaId = useMemo(() => {
     if (draft.useCustomBackground && draft.backgroundMediaId) {
       return draft.backgroundMediaId;
     }
 
-    return fallbackBackgroundPage?.backgroundMediaId || "";
-  }, [draft.useCustomBackground, draft.backgroundMediaId, fallbackBackgroundPage]);
+    if (activePage?.type === "answer") {
+      return questionResolvedBackgroundMediaId || linkedCategory?.columnBackgroundMediaId || "";
+    }
+
+    return linkedCategory?.columnBackgroundMediaId || "";
+  }, [
+    draft.useCustomBackground,
+    draft.backgroundMediaId,
+    activePage,
+    questionResolvedBackgroundMediaId,
+    linkedCategory,
+  ]);
 
   const autoTitle = useMemo(() => {
     return getAutoTitle(flowPages, game);
@@ -471,30 +496,15 @@ function QuestionFlowEditorPage() {
 
     const normalized = normalizePageContent(activePage);
 
-    const inheritedBackground =
-      activePage.type === "answer" &&
-      !activePage.useCustomBackground &&
-      fallbackBackgroundPage
-        ? {
-          useCustomBackground: true,
-          backgroundMediaId: fallbackBackgroundPage.backgroundMediaId || "",
-          backgroundName: fallbackBackgroundPage.backgroundName || "",
-        }
-        : {
-          useCustomBackground: Boolean(activePage.useCustomBackground),
-          backgroundMediaId: activePage.backgroundMediaId || "",
-          backgroundName: activePage.backgroundName || "",
-        };
-
     setDraft({
       titleMode: activePage.titleMode || "auto",
       customTitle: activePage.customTitle || "",
       layout: normalized.layout,
       textBlocks: normalized.textBlocks,
       mediaItems: normalized.mediaItems,
-      useCustomBackground: inheritedBackground.useCustomBackground,
-      backgroundMediaId: inheritedBackground.backgroundMediaId,
-      backgroundName: inheritedBackground.backgroundName,
+      useCustomBackground: Boolean(activePage.useCustomBackground),
+      backgroundMediaId: activePage.backgroundMediaId || "",
+      backgroundName: activePage.backgroundName || "",
       enableModifier: Boolean(activePage.enableModifier),
       modifierText: activePage.modifierText || "",
       isSecretModifier: Boolean(activePage.isSecretModifier),
@@ -502,7 +512,7 @@ function QuestionFlowEditorPage() {
       timerSeconds: activePage.timerSeconds ?? 60,
     });
     setSelectedLayoutGroup(getDefaultGroupForLayout(normalized.layout));
-  }, [activePage, fallbackBackgroundPage]);
+  }, [activePage]);
 
   useEffect(() => {
     if (activePage?.type === "answer") {
@@ -968,6 +978,12 @@ function QuestionFlowEditorPage() {
             <div className="flow-editor-section">
               <h3>Background</h3>
 
+              <div className="flow-editor-field">
+                <p className="flow-editor-title-help">
+                  This page uses the category background by default. Enable this only to override it for this specific page.
+                </p>
+              </div>
+
               <label className="flow-editor-checkbox">
                 <input
                   type="checkbox"
@@ -976,7 +992,7 @@ function QuestionFlowEditorPage() {
                     updateDraftField("useCustomBackground", e.target.checked)
                   }
                 />
-                Use custom background
+                Use page-specific background override
               </label>
 
               {draft.useCustomBackground ? (

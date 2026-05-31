@@ -84,30 +84,45 @@ function GameFlowPlayerPage() {
     return flowPages.find((page) => page.type === "question-step") || null;
   }, [flowPages]);
 
+  const linkedCategory = useMemo(() => {
+    const boardLink = currentPage?.boardLink || flowPages.find((page) => page.boardLink)?.boardLink;
+
+    if (!game || !boardLink?.boardPageId || !boardLink?.categoryId) {
+      return null;
+    }
+
+    const linkedBoardPage = (game.gameConfig?.pages || []).find(
+      (page) => page.id === boardLink.boardPageId
+    );
+
+    return (
+      linkedBoardPage?.categories?.find(
+        (category) => category.id === boardLink.categoryId
+      ) || null
+    );
+  }, [game, currentPage, flowPages]);
+
   const linkedBoardPageId = useMemo(() => {
     return flowPages.find((page) => page.boardLink?.boardPageId)?.boardLink?.boardPageId || null;
   }, [flowPages]);
 
-  const backgroundSourcePage = useMemo(() => {
-    if (!currentPage) return null;
+  const effectiveBackgroundMediaId = useMemo(() => {
+    if (!currentPage) return "";
 
     if (currentPage.useCustomBackground && currentPage.backgroundMediaId) {
-      return currentPage;
+      return currentPage.backgroundMediaId;
     }
 
     if (currentPage.type === "answer") {
-      return (
-        flowPages.find(
-          (page) =>
-            page.type === "question-step" &&
-            page.useCustomBackground &&
-            page.backgroundMediaId
-        ) || null
-      );
+      if (firstQuestionPage?.useCustomBackground && firstQuestionPage.backgroundMediaId) {
+        return firstQuestionPage.backgroundMediaId;
+      }
+
+      return linkedCategory?.columnBackgroundMediaId || "";
     }
 
-    return null;
-  }, [currentPage, flowPages]);
+    return linkedCategory?.columnBackgroundMediaId || "";
+  }, [currentPage, firstQuestionPage, linkedCategory]);
 
   const pageTitle = useMemo(() => {
     if (!currentPage) return "";
@@ -146,27 +161,6 @@ function GameFlowPlayerPage() {
       };
     });
   }, [game]);
-
-  const inheritedBackgroundPage = useMemo(() => {
-    if (!currentPage) return null;
-
-    if (currentPage.useCustomBackground && currentPage.backgroundMediaId) {
-      return currentPage;
-    }
-
-    if (currentPage.type === "answer") {
-      return (
-        flowPages.find(
-          (page) =>
-            page.type === "question-step" &&
-            page.useCustomBackground &&
-            page.backgroundMediaId
-        ) || null
-      );
-    }
-
-    return null;
-  }, [currentPage, flowPages]);
 
   const pointsValue = useMemo(() => {
     if (!currentPage) return 0;
@@ -253,8 +247,6 @@ function GameFlowPlayerPage() {
       objectUrls.forEach((url) => URL.revokeObjectURL(url));
     };
   }, [currentPage?.id, currentPage?.mediaItems]);
-
-  const effectiveBackgroundMediaId = backgroundSourcePage?.backgroundMediaId || "";
 
   useEffect(() => {
     let isCancelled = false;
@@ -490,10 +482,13 @@ function GameFlowPlayerPage() {
                 ? Boolean(firstQuestionPage?.isSecretModifier)
                 : Boolean(currentPage.isSecretModifier),
             timerSeconds: timeLeft,
-            useCustomBackground: Boolean(backgroundSourcePage?.backgroundMediaId),
-            backgroundMediaId: backgroundSourcePage?.backgroundMediaId || "",
+            useCustomBackground: Boolean(effectiveBackgroundMediaId),
+            backgroundMediaId: effectiveBackgroundMediaId,
             backgroundName:
-              backgroundSourcePage?.backgroundName || currentPage.backgroundName || "",
+              currentPage.backgroundName ||
+              firstQuestionPage?.backgroundName ||
+              linkedCategory?.columnBackgroundName ||
+              "",
           }}
           pageTitle={pageTitle}
           mediaPreviewMap={mediaPreviewMap}

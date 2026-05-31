@@ -231,7 +231,7 @@ function FlowPageRenderer({
       <div
         className="flow-page-renderer__background"
         style={
-          page.useCustomBackground && backgroundPreviewUrl
+          backgroundPreviewUrl
             ? { backgroundImage: `url(${backgroundPreviewUrl})`, opacity: 1 }
             : { backgroundImage: "none", opacity: 0 }
         }

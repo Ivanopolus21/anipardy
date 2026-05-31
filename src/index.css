@@ -2935,3 +2935,11 @@ textarea {
     grid-template-columns: 1fr;
   }
 }
+
+.board-side-panel__remove-bg-btn {
+  margin-top: 12px;
+}
+
+.board-side-panel__section .board-side-panel__info {
+  margin-top: 12px;
+}

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getGameById, updateGame } from "../../db.js";
+import { getGameById, updateGame, saveMedia } from "../../db.js";
 import "../../index.css";
 
 function getFlowAutoTitle(flowPages, currency = "Points") {
@@ -53,9 +53,106 @@ function BoardEditorPage() {
     loadGame();
   }, [id, pageId, navigate]);
 
+  async function createStoredMediaRecord(file) {
+    const mediaRecord = {
+      id: crypto.randomUUID(),
+      blob: file,
+      name: file.name,
+      mimeType: file.type || "",
+      size: file.size || 0,
+      createdAt: Date.now(),
+    };
+
+    await saveMedia(mediaRecord);
+
+    return {
+      mediaId: mediaRecord.id,
+      name: mediaRecord.name,
+      mimeType: mediaRecord.mimeType,
+    };
+  }
+
   const boardPage = useMemo(() => {
     return (game?.gameConfig?.pages || []).find((page) => page.id === pageId);
   }, [game, pageId]);
+
+  const selectedCategory = useMemo(() => {
+    if (!boardPage || !selectedCell) return null;
+    return boardPage.categories.find((item) => item.id === selectedCell.categoryId) || null;
+  }, [boardPage, selectedCell]);
+
+  async function handleColumnBackgroundFileChange(file) {
+    if (!file || !selectedCell || !game || !boardPage) return;
+    if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) return;
+
+    try {
+      const storedMedia = await createStoredMediaRecord(file);
+
+      const updatedPages = game.gameConfig.pages.map((page) => {
+        if (page.id !== boardPage.id) return page;
+
+        return {
+          ...page,
+          categories: page.categories.map((category) =>
+            category.id === selectedCell.categoryId
+              ? {
+                ...category,
+                columnBackgroundMediaId: storedMedia.mediaId,
+                columnBackgroundName: storedMedia.name,
+              }
+              : category
+          ),
+        };
+      });
+
+      const updatedGame = {
+        ...game,
+        gameConfig: {
+          ...game.gameConfig,
+          pages: updatedPages,
+        },
+        updatedAt: Date.now(),
+      };
+
+      await updateGame(updatedGame);
+      setGame(updatedGame);
+    } catch (error) {
+      console.error("Failed to save column background:", error);
+    }
+  }
+
+  async function removeColumnBackground() {
+    if (!selectedCell || !game || !boardPage) return;
+
+    const updatedPages = game.gameConfig.pages.map((page) => {
+      if (page.id !== boardPage.id) return page;
+
+      return {
+        ...page,
+        categories: page.categories.map((category) =>
+          category.id === selectedCell.categoryId
+            ? {
+              ...category,
+              columnBackgroundMediaId: "",
+              columnBackgroundName: "",
+            }
+            : category
+        ),
+      };
+    });
+
+    const updatedGame = {
+      ...game,
+      gameConfig: {
+        ...game.gameConfig,
+        pages: updatedPages,
+      },
+      updatedAt: Date.now(),
+    };
+
+    await updateGame(updatedGame);
+    setGame(updatedGame);
+  }
 
   const flowMap = useMemo(() => {
     const pages = game?.gameConfig?.pages || [];
@@ -470,6 +567,41 @@ function BoardEditorPage() {
                   <p>
                     Save the points before creating and linking the question pages.
                   </p>
+                </div>
+
+                <div className="board-side-panel__info">
+                  <p>
+                    Column background applies to all flow pages in this category unless a page has its own background override.
+                  </p>
+                </div>
+
+                <div className="board-side-panel__section">
+                  <label className="board-setup-field">
+                    <span>Column background</span>
+                    <input
+                      type="file"
+                      accept="image/*,video/*"
+                      onChange={(e) => handleColumnBackgroundFileChange(e.target.files?.[0])}
+                    />
+                  </label>
+
+                  {selectedCategory?.columnBackgroundName ? (
+                    <div className="board-side-panel__info">
+                      <p>Current column background: {selectedCategory.columnBackgroundName}</p>
+                      <button
+                        type="button"
+                        className="secondary-btn board-side-panel__remove-bg-btn"
+                        onClick={removeColumnBackground}
+                        disabled={isSavingCell || isCreatingFlow}
+                      >
+                        Remove column background
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="board-side-panel__info">
+                      <p>No column background selected.</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="board-side-panel__actions">

@@ -13,6 +13,8 @@ function buildEmptyCategories(count, previous = []) {
     id: previous[index]?.id || crypto.randomUUID(),
     name: previous[index]?.name || "",
     questions: previous[index]?.questions || [],
+    columnBackgroundMediaId: previous[index]?.columnBackgroundMediaId || "",
+    columnBackgroundName: previous[index]?.columnBackgroundName || "",
   }));
 }
 
@@ -178,6 +180,8 @@ function BoardSetupPage() {
       .slice(0, finalCategoryCount)
       .map((category) => ({
         ...category,
+        columnBackgroundMediaId: category.columnBackgroundMediaId || "",
+        columnBackgroundName: category.columnBackgroundName || "",
         questions: Array.from({ length: finalQuestionCount }, (_, rowIndex) => {
           const existingQuestion = category.questions?.[rowIndex];
 
