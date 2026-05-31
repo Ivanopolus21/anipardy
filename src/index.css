@@ -3090,3 +3090,130 @@ textarea {
 .flow-page-renderer--preview .flow-page-renderer__stacked-layout .flow-page-renderer__media-placeholder {
   width: 100%;
 }
+
+.flow-editor-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.flow-editor-panel > * {
+  min-width: 0;
+}
+
+.flow-editor-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  margin-top: 20px;
+  padding-top: 14px;
+  padding-bottom: 4px;
+  background: linear-gradient(
+          180deg,
+          rgba(250, 250, 250, 0) 0%,
+          rgba(250, 250, 250, 0.92) 22%,
+          rgba(250, 250, 250, 1) 100%
+  );
+  backdrop-filter: blur(6px);
+  border-top: 1px solid var(--border);
+}
+
+.flow-editor-footer .primary-btn {
+  width: 100%;
+}
+
+.flow-editor-accordion {
+  margin-top: 16px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.flow-editor-accordion__trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border: 0;
+  background: #fff;
+  text-align: left;
+}
+
+.flow-editor-accordion__trigger:hover {
+  background: #fafafa;
+}
+
+.flow-editor-accordion__heading {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.flow-editor-accordion__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.flow-editor-accordion__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.flow-editor-accordion__summary {
+  font-size: 0.84rem;
+  color: var(--text-muted);
+  background: #f3f4f7;
+  border-radius: 999px;
+  padding: 4px 8px;
+}
+
+.flow-editor-accordion__subtitle {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.flow-editor-accordion__icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #f2f4f8;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.flow-editor-accordion__content {
+  padding: 0 18px 18px;
+  border-top: 1px solid var(--border);
+  background: #fcfcfe;
+}
+
+.flow-editor-accordion__content {
+  padding: 14px 18px 18px;
+  border-top: 1px solid var(--border);
+  background: #fcfcfe;
+}
+
+.flow-editor-accordion__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.flow-editor-accordion__summary {
+  font-size: 0.84rem;
+  color: var(--text-muted);
+  background: #f3f4f7;
+  border-radius: 999px;
+  padding: 5px 10px;
+}

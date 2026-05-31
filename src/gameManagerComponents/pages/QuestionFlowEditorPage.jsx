@@ -343,6 +343,46 @@ function getStepLabel(page, index) {
   return `Question ${index + 1}`;
 }
 
+function EditorSection({
+                         title,
+                         subtitle,
+                         isOpen,
+                         onToggle,
+                         summary,
+                         children,
+                       }) {
+  return (
+    <div className={`flow-editor-accordion ${isOpen ? "is-open" : ""}`}>
+      <button
+        type="button"
+        className="flow-editor-accordion__trigger"
+        onClick={onToggle}
+        aria-expanded={isOpen}
+      >
+        <div className="flow-editor-accordion__heading">
+          <div className="flow-editor-accordion__title-row">
+            <span className="flow-editor-accordion__title">{title}</span>
+            {!isOpen && summary ? (
+              <span className="flow-editor-accordion__summary">{summary}</span>
+            ) : null}
+          </div>
+          {subtitle ? (
+            <span className="flow-editor-accordion__subtitle">{subtitle}</span>
+          ) : null}
+        </div>
+
+        <span className="flow-editor-accordion__icon" aria-hidden="true">
+          {isOpen ? "−" : "+"}
+        </span>
+      </button>
+
+      {isOpen ? (
+        <div className="flow-editor-accordion__content">{children}</div>
+      ) : null}
+    </div>
+  );
+}
+
 function getAutoTitle(flowPages, game) {
   const linkedPage = flowPages.find(
     (page) =>
@@ -390,6 +430,49 @@ function QuestionFlowEditorPage() {
   const [mediaPreviews, setMediaPreviews] = useState({});
   const [backgroundPreviewUrl, setBackgroundPreviewUrl] = useState("");
   const [showAdvancedFeatures, setShowAdvancedFeatures] = useState(false);
+  const [openSections, setOpenSections] = useState({
+    pageConfig: false,
+    layoutFamily: true,
+    layoutOption: true,
+    content: true,
+    background: false,
+    advanced: false,
+  });
+
+  function toggleSection(sectionKey) {
+    setOpenSections((current) => ({
+      ...current,
+      [sectionKey]: !current[sectionKey],
+    }));
+  }
+
+  function handleLayoutGroupChange(groupId) {
+    setSelectedLayoutGroup(groupId);
+
+    setOpenSections((current) => ({
+      ...current,
+      layoutFamily: false,
+      layoutOption: true,
+    }));
+  }
+
+  function handleLayoutChange(nextLayout) {
+    const definition = getLayoutDefinition(nextLayout);
+
+    setDraft((current) => ({
+      ...current,
+      layout: nextLayout,
+      textBlocks: buildSizedTextBlocks(current.textBlocks, definition.textCount),
+      mediaItems: buildSizedMediaItems(current.mediaItems, definition.mediaSlots),
+    }));
+
+    setOpenSections((current) => ({
+      ...current,
+      layoutOption: false,
+      content: true,
+      background: false,
+    }));
+  }
 
   useEffect(() => {
     async function loadGame() {
@@ -522,7 +605,17 @@ function QuestionFlowEditorPage() {
       enableTimer: Boolean(activePage.enableTimer),
       timerSeconds: activePage.timerSeconds ?? 60,
     });
-    setSelectedLayoutGroup(getDefaultGroupForLayout(normalized.layout));
+
+    const defaultGroup = getDefaultGroupForLayout(normalized.layout);
+    setSelectedLayoutGroup(defaultGroup);
+    setOpenSections({
+      pageConfig: false,
+      layoutFamily: true,
+      layoutOption: false,
+      content: true,
+      background: false,
+      advanced: false,
+    });
   }, [activePage]);
 
   useEffect(() => {
@@ -625,17 +718,6 @@ function QuestionFlowEditorPage() {
     setDraft((current) => ({
       ...current,
       [field]: value,
-    }));
-  }
-
-  function handleLayoutChange(nextLayout) {
-    const definition = getLayoutDefinition(nextLayout);
-
-    setDraft((current) => ({
-      ...current,
-      layout: nextLayout,
-      textBlocks: buildSizedTextBlocks(current.textBlocks, definition.textCount),
-      mediaItems: buildSizedMediaItems(current.mediaItems, definition.mediaSlots),
     }));
   }
 
@@ -824,45 +906,53 @@ function QuestionFlowEditorPage() {
 
         <div className="flow-editor-panels">
           <form className="flow-editor-card flow-editor-panel" onSubmit={handleSave}>
-            <div className="flow-editor-panel__header">
-              <h2>Page config</h2>
-            </div>
-
-            <div className="flow-editor-field">
-              <div className="flow-editor-title-box">
-                <div className="flow-editor-title-preview">{effectiveTitle}</div>
-                <p className="flow-editor-title-help">
-                  This is the title players will see on this page.
-                </p>
+            <EditorSection
+              title="Page config"
+              subtitle="Player-facing title and page basics"
+              isOpen={openSections.pageConfig}
+              onToggle={() => toggleSection("pageConfig")}
+              summary={draft.titleMode === "custom" ? effectiveTitle : "Automatic title"}
+            >
+              <div className="flow-editor-field">
+                <div className="flow-editor-title-box">
+                  <div className="flow-editor-title-preview">{effectiveTitle}</div>
+                  <p className="flow-editor-title-help">
+                    This is the title players will see on this page.
+                  </p>
+                </div>
               </div>
-            </div>
 
-            <label className="flow-editor-checkbox">
-              <input
-                type="checkbox"
-                checked={draft.titleMode === "custom"}
-                onChange={(e) =>
-                  updateDraftField("titleMode", e.target.checked ? "custom" : "auto")
-                }
-              />
-              <span>Use custom player title</span>
-            </label>
-
-            {draft.titleMode === "custom" && (
-              <label className="flow-editor-field">
-                <span>Custom title</span>
+              <label className="flow-editor-checkbox">
                 <input
-                  type="text"
-                  value={draft.customTitle}
-                  onChange={(e) => updateDraftField("customTitle", e.target.value)}
-                  placeholder={autoTitle}
+                  type="checkbox"
+                  checked={draft.titleMode === "custom"}
+                  onChange={(e) =>
+                    updateDraftField("titleMode", e.target.checked ? "custom" : "auto")
+                  }
                 />
+                <span>Use custom player title</span>
               </label>
-            )}
 
-            <div className="flow-editor-section">
-              <h3>Layout</h3>
+              {draft.titleMode === "custom" && (
+                <label className="flow-editor-field">
+                  <span>Custom title</span>
+                  <input
+                    type="text"
+                    value={draft.customTitle}
+                    onChange={(e) => updateDraftField("customTitle", e.target.value)}
+                    placeholder={autoTitle}
+                  />
+                </label>
+              )}
+            </EditorSection>
 
+            <EditorSection
+              title="Layout category"
+              subtitle="Choose the content type first"
+              isOpen={openSections.layoutFamily}
+              onToggle={() => toggleSection("layoutFamily")}
+              summary={LAYOUT_GROUPS.find((group) => group.id === selectedLayoutGroup)?.label}
+            >
               <div className="flow-editor-layout-groups" role="tablist" aria-label="Layout groups">
                 {LAYOUT_GROUPS.map((group) => (
                   <button
@@ -875,13 +965,21 @@ function QuestionFlowEditorPage() {
                         ? "flow-editor-layout-group--active"
                         : ""
                     }`}
-                    onClick={() => setSelectedLayoutGroup(group.id)}
+                    onClick={() => handleLayoutGroupChange(group.id)}
                   >
                     {group.label}
                   </button>
                 ))}
               </div>
+            </EditorSection>
 
+            <EditorSection
+              title="Layout"
+              subtitle="Choose the exact page structure"
+              isOpen={openSections.layoutOption}
+              onToggle={() => toggleSection("layoutOption")}
+              summary={currentLayoutDefinition.label}
+            >
               <div className="flow-editor-layout-grid">
                 {visibleLayoutOptions.map(([layoutKey, option]) => (
                   <button
@@ -897,120 +995,131 @@ function QuestionFlowEditorPage() {
                   </button>
                 ))}
               </div>
-            </div>
+            </EditorSection>
 
-            {currentLayoutDefinition.textCount > 0 && (
-              <div className="flow-editor-section">
-                <h3>Text content</h3>
-                <div className="flow-editor-stack">
-                  {draft.textBlocks.map((block, index) => (
-                    <label className="flow-editor-field" key={block.id}>
-                      <span>
-                        {currentLayoutDefinition.textCount === 1
-                          ? isAnswerPage
-                            ? "Main text"
-                            : "Question text"
-                          : draft.layout === "texts-4"
-                            ? index === 0
-                              ? "Question text"
-                              : `Option ${index}`
-                            : `Text block ${index + 1}`}
-                      </span>
-                      <textarea
-                        value={block.value || ""}
-                        onChange={(e) => updateTextBlock(block.id, e.target.value)}
-                        placeholder={
-                          draft.layout === "texts-4"
-                            ? index === 0
-                              ? "Write the question shown to players"
-                              : `Write option ${index}`
-                            : isAnswerPage
-                              ? "Write the text shown on the answer page"
-                              : "Write the text shown to players"
-                        }
-                      />
-                    </label>
-                  ))}
+            <EditorSection
+              title="Contents"
+              subtitle="Texts, images, audio and video for this layout"
+              isOpen={openSections.content}
+              onToggle={() => toggleSection("content")}
+            >
+              {currentLayoutDefinition.textCount > 0 && (
+                <div className="flow-editor-section">
+                  <h3>Text content</h3>
+                  <div className="flow-editor-stack">
+                    {draft.textBlocks.map((block, index) => (
+                      <label className="flow-editor-field" key={block.id}>
+            <span>
+              {currentLayoutDefinition.textCount === 1
+                ? isAnswerPage
+                  ? "Main text"
+                  : "Question text"
+                : draft.layout === "texts-4"
+                  ? index === 0
+                    ? "Question text"
+                    : `Option ${index}`
+                  : `Text block ${index + 1}`}
+            </span>
+                        <textarea
+                          value={block.value || ""}
+                          onChange={(e) => updateTextBlock(block.id, e.target.value)}
+                          placeholder={
+                            draft.layout === "texts-4"
+                              ? index === 0
+                                ? "Write the question shown to players"
+                                : `Write option ${index}`
+                              : isAnswerPage
+                                ? "Write the text shown on the answer page"
+                                : "Write the text shown to players"
+                          }
+                        />
+                      </label>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {currentLayoutDefinition.mediaSlots.length > 0 && (
-              <div className="flow-editor-section">
-                <h3>Media content</h3>
-                <div className="flow-editor-stack">
-                  {orderedMediaItems.map((item, index) => {
-                    const previewUrl = mediaPreviews[item.id] || "";
-                    const accept =
-                      item.type === "image"
-                        ? "image/*,.gif"
-                        : item.type === "audio"
-                          ? "audio/*"
-                          : "video/*,.mp4,.mkv";
+              {currentLayoutDefinition.mediaSlots.length > 0 && (
+                <div className="flow-editor-section">
+                  <h3>Media content</h3>
+                  <div className="flow-editor-stack">
+                    {orderedMediaItems.map((item, index) => {
+                      const previewUrl = mediaPreviews[item.id] || "";
+                      const accept =
+                        item.type === "image"
+                          ? "image/*,.gif"
+                          : item.type === "audio"
+                            ? "audio/*"
+                            : "video/*,.mp4,.mkv";
 
-                    return (
-                      <div className="flow-editor-media-card" key={item.id}>
-                        <div className="flow-editor-media-card__header">
-                          <h4>Media slot {index + 1}</h4>
-                          <span>{item.type}</span>
-                        </div>
-
-                        <label className="flow-editor-field">
-                          <span>Upload file</span>
-                          <input
-                            type="file"
-                            accept={accept}
-                            onChange={(e) =>
-                              handleMediaFileChange(item.id, e.target.files?.[0])
-                            }
-                          />
-                        </label>
-
-                        {item.name && (
-                          <div className="flow-editor-file-note">
-                            Selected file: {item.name}
+                      return (
+                        <div className="flow-editor-media-card" key={item.id}>
+                          <div className="flow-editor-media-card__header">
+                            <h4>Media slot {index + 1}</h4>
+                            <span>{item.type}</span>
                           </div>
-                        )}
 
-                        {item.type === "image" && (
                           <label className="flow-editor-field">
-                            <span>Alt text</span>
+                            <span>Upload file</span>
                             <input
-                              type="text"
-                              value={item.alt || ""}
-                              onChange={(e) => updateMediaItem(item.id, "alt", e.target.value)}
-                              placeholder="Describe the image briefly"
+                              type="file"
+                              accept={accept}
+                              onChange={(e) =>
+                                handleMediaFileChange(item.id, e.target.files?.[0])
+                              }
                             />
                           </label>
-                        )}
 
-                        {previewUrl && item.type === "image" && (
-                          <div className="flow-editor-preview">
-                            <img src={previewUrl} alt={item.alt || ""} />
-                          </div>
-                        )}
+                          {item.name && (
+                            <div className="flow-editor-file-note">
+                              Selected file: {item.name}
+                            </div>
+                          )}
 
-                        {previewUrl && item.type === "audio" && (
-                          <div className="flow-editor-preview">
-                            <audio controls src={previewUrl} />
-                          </div>
-                        )}
+                          {item.type === "image" && (
+                            <label className="flow-editor-field">
+                              <span>Alt text</span>
+                              <input
+                                type="text"
+                                value={item.alt || ""}
+                                onChange={(e) => updateMediaItem(item.id, "alt", e.target.value)}
+                                placeholder="Describe the image briefly"
+                              />
+                            </label>
+                          )}
 
-                        {previewUrl && item.type === "video" && (
-                          <div className="flow-editor-preview">
-                            <video controls src={previewUrl} />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                          {previewUrl && item.type === "image" && (
+                            <div className="flow-editor-preview">
+                              <img src={previewUrl} alt={item.alt || ""} />
+                            </div>
+                          )}
+
+                          {previewUrl && item.type === "audio" && (
+                            <div className="flow-editor-preview">
+                              <audio controls src={previewUrl} />
+                            </div>
+                          )}
+
+                          {previewUrl && item.type === "video" && (
+                            <div className="flow-editor-preview">
+                              <video controls src={previewUrl} />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </EditorSection>
 
-            <div className="flow-editor-section">
-              <h3>Background</h3>
-
+            <EditorSection
+              title="Background"
+              subtitle="Use category background or override it for this page"
+              isOpen={openSections.background}
+              onToggle={() => toggleSection("background")}
+              summary={draft.useCustomBackground ? "Custom override enabled" : "Using category background"}
+            >
               <div className="flow-editor-field">
                 <p className="flow-editor-title-help">
                   This page uses the category background by default. Enable this only to override it for this specific page.
@@ -1037,91 +1146,89 @@ function QuestionFlowEditorPage() {
                   />
                 </div>
               ) : null}
-            </div>
+            </EditorSection>
 
             {isQuestionPage && (
-              <div className="flow-editor-section">
-                <button
-                  type="button"
-                  className="flow-editor-advanced-toggle"
-                  onClick={() => setShowAdvancedFeatures((current) => !current)}
-                  aria-expanded={showAdvancedFeatures}
-                >
-                  Advanced features
-                </button>
+              <EditorSection
+                title="Advanced features"
+                subtitle="Modifier and timer settings"
+                isOpen={openSections.advanced}
+                onToggle={() => toggleSection("advanced")}
+                summary={
+                  [
+                    draft.enableModifier ? "Modifier enabled" : null,
+                    draft.enableTimer ? `Timer ${draft.timerSeconds}s` : null,
+                  ].filter(Boolean).join(" • ") || "Disabled"
+                }
+              >
+                <label className="flow-editor-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={draft.enableModifier}
+                    onChange={(e) =>
+                      setDraft((current) => ({
+                        ...current,
+                        enableModifier: e.target.checked,
+                        isSecretModifier: e.target.checked ? current.isSecretModifier : false,
+                      }))
+                    }
+                  />
+                  <span>Enable modifier</span>
+                </label>
 
-                {showAdvancedFeatures ? (
-                  <div className="flow-editor-advanced-panel">
-                    <label className="flow-editor-checkbox">
+                {draft.enableModifier ? (
+                  <div className="flow-editor-suboption-group">
+                    <div>
+                      <label className="flow-editor-label">Modifier text</label>
+                      <input
+                        type="text"
+                        value={draft.modifierText}
+                        onChange={(e) => updateDraftField("modifierText", e.target.value)}
+                        placeholder="Example: X2 points"
+                      />
+                    </div>
+
+                    <label className="flow-editor-checkbox flow-editor-checkbox--nested">
                       <input
                         type="checkbox"
-                        checked={draft.enableModifier}
-                        onChange={(e) =>
-                          setDraft((current) => ({
-                            ...current,
-                            enableModifier: e.target.checked,
-                            isSecretModifier: e.target.checked ? current.isSecretModifier : false,
-                          }))
-                        }
+                        checked={draft.isSecretModifier}
+                        onChange={(e) => updateDraftField("isSecretModifier", e.target.checked)}
                       />
-                      <span>Enable modifier</span>
+                      <span>Make it "Secret modifier" (shown on Answer page only)</span>
                     </label>
-
-                    {draft.enableModifier ? (
-                      <div className="flow-editor-suboption-group">
-                        <div>
-                          <label className="flow-editor-label">Modifier text</label>
-                          <input
-                            type="text"
-                            value={draft.modifierText}
-                            onChange={(e) => updateDraftField("modifierText", e.target.value)}
-                            placeholder="Example: X2 points"
-                          />
-                        </div>
-
-                        <label className="flow-editor-checkbox flow-editor-checkbox--nested">
-                          <input
-                            type="checkbox"
-                            checked={draft.isSecretModifier}
-                            onChange={(e) => updateDraftField("isSecretModifier", e.target.checked)}
-                          />
-                          <span>Make it "Secret modifier" (shown on Answer page only)</span>
-                        </label>
-                      </div>
-                    ) : null}
-
-                    <label className="flow-editor-checkbox">
-                      <input
-                        type="checkbox"
-                        checked={draft.enableTimer}
-                        onChange={(e) =>
-                          setDraft((current) => ({
-                            ...current,
-                            enableTimer: e.target.checked,
-                            timerSeconds: e.target.checked ? 60 : current.timerSeconds,
-                          }))
-                        }
-                      />
-                      <span>Enable timer</span>
-                    </label>
-
-                    {draft.enableTimer ? (
-                      <div>
-                        <label className="flow-editor-label">Timer length in seconds</label>
-                        <input
-                          type="number"
-                          min="5"
-                          max="600"
-                          value={draft.timerSeconds}
-                          onChange={(e) =>
-                            updateDraftField("timerSeconds", Number(e.target.value) || 60)
-                          }
-                        />
-                      </div>
-                    ) : null}
                   </div>
                 ) : null}
-              </div>
+
+                <label className="flow-editor-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={draft.enableTimer}
+                    onChange={(e) =>
+                      setDraft((current) => ({
+                        ...current,
+                        enableTimer: e.target.checked,
+                        timerSeconds: e.target.checked ? 60 : current.timerSeconds,
+                      }))
+                    }
+                  />
+                  <span>Enable timer</span>
+                </label>
+
+                {draft.enableTimer ? (
+                  <div>
+                    <label className="flow-editor-label">Timer length in seconds</label>
+                    <input
+                      type="number"
+                      min="5"
+                      max="600"
+                      value={draft.timerSeconds}
+                      onChange={(e) =>
+                        updateDraftField("timerSeconds", Number(e.target.value) || 60)
+                      }
+                    />
+                  </div>
+                ) : null}
+              </EditorSection>
             )}
 
             <div className="flow-editor-footer">
