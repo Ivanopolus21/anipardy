@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getGameById, updateGame, saveMedia } from "../../db.js";
 import "../../index.css";
@@ -82,6 +82,12 @@ function BoardEditorPage() {
     return boardPage.categories.find((item) => item.id === selectedCell.categoryId) || null;
   }, [boardPage, selectedCell]);
 
+  const hasColumnBackground = Boolean(
+    selectedCategory?.columnBackgroundMediaId || selectedCategory?.columnBackgroundName?.trim()
+  );
+
+  const columnBackgroundInputRef = useRef(null);
+
   async function handleColumnBackgroundFileChange(file) {
     if (!file || !selectedCell || !game || !boardPage) return;
     if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) return;
@@ -124,6 +130,10 @@ function BoardEditorPage() {
 
   async function removeColumnBackground() {
     if (!selectedCell || !game || !boardPage) return;
+
+    if (columnBackgroundInputRef.current) {
+      columnBackgroundInputRef.current.value = "";
+    }
 
     const updatedPages = game.gameConfig.pages.map((page) => {
       if (page.id !== boardPage.id) return page;
@@ -618,13 +628,14 @@ function BoardEditorPage() {
                   <label className="board-setup-field">
                     <span>Column background</span>
                     <input
+                      ref={columnBackgroundInputRef}
                       type="file"
                       accept="image/*,video/*"
                       onChange={(e) => handleColumnBackgroundFileChange(e.target.files?.[0])}
                     />
                   </label>
 
-                  {selectedCategory?.columnBackgroundName ? (
+                  {hasColumnBackground ? (
                     <div className="board-side-panel__info">
                       <p>Current column background: {selectedCategory.columnBackgroundName}</p>
                       <button
