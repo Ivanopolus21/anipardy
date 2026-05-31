@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getGameById, updateGame, saveMedia } from "../../db.js";
 import "../../index.css";
 
@@ -19,6 +19,7 @@ function getFlowAutoTitle(flowPages, currency = "Points") {
 function BoardEditorPage() {
   const { id, pageId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [game, setGame] = useState(null);
   const [selectedCell, setSelectedCell] = useState(null);
@@ -286,6 +287,13 @@ function BoardEditorPage() {
     return (game?.gameConfig?.pages || []).filter((page) => page.type === "board");
   }, [game]);
 
+  useEffect(() => {
+    const selectedFromState = location.state?.selectedCell;
+    if (!boardPage || !selectedFromState) return;
+
+    openCellEditor(selectedFromState.categoryId, selectedFromState.rowIndex);
+  }, [boardPage, location.state]);
+
   const currentBoardIndex = useMemo(() => {
     return boardPages.findIndex((page) => page.id === pageId);
   }, [boardPages, pageId]);
@@ -323,6 +331,10 @@ function BoardEditorPage() {
       navigate(`/game/${id}/flow/${question.flowId}`, {
         state: {
           returnTo: `/game/${id}/board/${pageId}`,
+          selectedCell: {
+            categoryId: selectedCell.categoryId,
+            rowIndex: selectedCell.rowIndex,
+          },
         },
       });
       return;
@@ -409,6 +421,10 @@ function BoardEditorPage() {
     navigate(`/game/${id}/flow/${flowId}`, {
       state: {
         returnTo: `/game/${id}/board/${pageId}`,
+        selectedCell: {
+          categoryId: selectedCell.categoryId,
+          rowIndex: selectedCell.rowIndex,
+        },
       },
     });
   }

@@ -38,6 +38,8 @@ function GameFlowPlayerPage() {
   const [isSavingScore, setIsSavingScore] = useState(false);
   const [scoreAmount, setScoreAmount] = useState(0);
   const [isSubtractMode, setIsSubtractMode] = useState(false);
+  const returnSelectedCell = location.state?.selectedCell || null;
+  const editorState = location.state?.editorState || null;
 
   useEffect(() => {
     async function loadGame() {
@@ -429,7 +431,7 @@ function GameFlowPlayerPage() {
             className="game-flow-player-btn"
             onClick={() =>
               isEditorPreview
-                ? navigate(returnTo)
+                ? navigate(returnTo, { state: editorState })
                 : linkedBoardPageId
                   ? navigate(`/play/${id}/board/${linkedBoardPageId}`)
                   : navigate(`/game/${id}`)

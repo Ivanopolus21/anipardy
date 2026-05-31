@@ -1112,7 +1112,8 @@ function QuestionFlowEditorPage() {
                   navigate(`/game/${id}/flow/${flowId}/play`, {
                     state: {
                       fromEditor: true,
-                      returnTo,
+                      returnTo: `/game/${id}/flow/${flowId}`,
+                      editorState: location.state || null,
                     },
                   })
                 }
