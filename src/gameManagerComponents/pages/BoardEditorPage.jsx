@@ -198,79 +198,87 @@ function BoardEditorPage() {
     setIsCreatingFlow(false);
   }
 
-  async function saveCellPoints(e) {
-    e.preventDefault();
-
-    if (!game || !boardPage || !selectedCell || isSavingCell) return;
+  async function persistCellPoints() {
+    if (!game || !boardPage || !selectedCell || isSavingCell) return null;
 
     setIsSavingCell(true);
 
-    const parsedPoints =
-      pointsInput.trim() === "" ? null : Math.max(0, Number(pointsInput));
+    try {
+      const parsedPoints =
+        pointsInput.trim() === "" ? null : Math.max(0, Number(pointsInput));
 
-    const nextPoints = Number.isFinite(parsedPoints) ? parsedPoints : null;
+      const nextPoints = Number.isFinite(parsedPoints) ? parsedPoints : null;
 
-    const category = boardPage.categories.find(
-      (item) => item.id === selectedCell.categoryId
-    );
+      const category = boardPage.categories.find(
+        (item) => item.id === selectedCell.categoryId
+      );
 
-    const nextCategoryName = category?.name || selectedCell.categoryName || "Category";
+      const nextCategoryName = category?.name || selectedCell.categoryName || "Category";
 
-    const question = category?.questions?.[selectedCell.rowIndex];
-    const linkedFlowId = question?.flowId || selectedCell.flowId || null;
+      const question = category?.questions?.[selectedCell.rowIndex];
+      const linkedFlowId = question?.flowId || selectedCell.flowId || null;
 
-    const updatedPages = game.gameConfig.pages.map((page) => {
-      if (page.id === boardPage.id) {
-        return {
-          ...page,
-          categories: page.categories.map((category) => {
-            if (category.id !== selectedCell.categoryId) return category;
+      const updatedPages = game.gameConfig.pages.map((page) => {
+        if (page.id === boardPage.id) {
+          return {
+            ...page,
+            categories: page.categories.map((category) => {
+              if (category.id !== selectedCell.categoryId) return category;
 
-            return {
-              ...category,
-              questions: category.questions.map((question, index) => {
-                if (index !== selectedCell.rowIndex) return question;
+              return {
+                ...category,
+                questions: category.questions.map((question, index) => {
+                  if (index !== selectedCell.rowIndex) return question;
 
-                return {
-                  ...question,
-                  points: nextPoints,
-                };
-              }),
-            };
-          }),
-        };
-      }
+                  return {
+                    ...question,
+                    points: nextPoints,
+                  };
+                }),
+              };
+            }),
+          };
+        }
 
-      if (
-        linkedFlowId &&
-        page.flowId === linkedFlowId &&
-        page.boardLink
-      ) {
-        return {
-          ...page,
-          boardLink: {
-            ...page.boardLink,
-            categoryName: nextCategoryName,
-            clueValue: nextPoints,
-          },
-        };
-      }
+        if (linkedFlowId && page.flowId === linkedFlowId && page.boardLink) {
+          return {
+            ...page,
+            boardLink: {
+              ...page.boardLink,
+              categoryName: nextCategoryName,
+              clueValue: nextPoints,
+            },
+          };
+        }
 
-      return page;
-    });
+        return page;
+      });
 
-    const updatedGame = {
-      ...game,
-      gameConfig: {
-        ...game.gameConfig,
-        pages: updatedPages,
-      },
-      updatedAt: Date.now(),
-    };
+      const updatedGame = {
+        ...game,
+        gameConfig: {
+          ...game.gameConfig,
+          pages: updatedPages,
+        },
+        updatedAt: Date.now(),
+      };
 
-    await updateGame(updatedGame);
-    setGame(updatedGame);
-    setIsSavingCell(false);
+      await updateGame(updatedGame);
+      setGame(updatedGame);
+
+      return {
+        updatedGame,
+        nextPoints,
+        category,
+      };
+    } finally {
+      setIsSavingCell(false);
+    }
+  }
+
+  async function saveCellPoints(e) {
+    e.preventDefault();
+    await persistCellPoints();
   }
 
   const selectedQuestion = useMemo(() => {
@@ -309,26 +317,41 @@ function BoardEditorPage() {
 
   const hasExistingFlow = linkedFlowPages.length > 0;
 
-  const hasSavedPoints =
-    selectedQuestion?.points !== null &&
-    selectedQuestion?.points !== undefined;
+  const typedPoints =
+    pointsInput.trim() === "" ? null : Number(pointsInput);
 
-  const canCreateFlow = Boolean(hasExistingFlow || hasSavedPoints);
+  const hasTypedPoints =
+    Number.isFinite(typedPoints) && typedPoints >= 0;
+
+  const canCreateFlow = Boolean(hasExistingFlow || hasTypedPoints);
 
   async function openOrCreateFlow() {
     if (!game || !boardPage || !selectedCell || isCreatingFlow) return;
 
     const category = boardPage.categories.find((item) => item.id === selectedCell.categoryId);
     const question = category?.questions?.[selectedCell.rowIndex];
+    const saveResult = await persistCellPoints();
+    const latestGame = saveResult?.updatedGame || game;
+    const latestPoints = saveResult?.nextPoints ?? question.points;
 
-    if (!category || !question) return;
+    if (!category || !question || latestPoints === null || latestPoints === undefined) return;
 
-    const existingFlowPages = question.flowId
-      ? flowMap.get(question.flowId) || []
+    const refreshedBoardPage = (latestGame.gameConfig?.pages || []).find(
+      (page) => page.id === boardPage.id
+    );
+
+    const refreshedCategory = refreshedBoardPage?.categories.find(
+      (item) => item.id === selectedCell.categoryId
+    );
+
+    const refreshedQuestion = refreshedCategory?.questions?.[selectedCell.rowIndex];
+
+    const existingFlowPages = refreshedQuestion?.flowId
+      ? flowMap.get(refreshedQuestion.flowId) || []
       : [];
 
     if (existingFlowPages.length > 0) {
-      navigate(`/game/${id}/flow/${question.flowId}`, {
+      navigate(`/game/${id}/flow/${refreshedQuestion.flowId}`, {
         state: {
           returnTo: `/game/${id}/board/${pageId}`,
           selectedCell: {
@@ -343,7 +366,7 @@ function BoardEditorPage() {
     setIsCreatingFlow(true);
 
     const flowId = crypto.randomUUID();
-    const clueValue = question.points;
+    const clueValue = latestPoints;
 
     const questionPage = {
       id: crypto.randomUUID(),
@@ -383,7 +406,7 @@ function BoardEditorPage() {
       media: [],
     };
 
-    const updatedPages = game.gameConfig.pages.map((page) => {
+    const updatedPages = latestGame.gameConfig.pages.map((page) => {
       if (page.id !== boardPage.id) return page;
 
       return {
@@ -408,9 +431,9 @@ function BoardEditorPage() {
     });
 
     const updatedGame = {
-      ...game,
+      ...latestGame,
       gameConfig: {
-        ...game.gameConfig,
+        ...latestGame.gameConfig,
         pages: [...updatedPages, questionPage, answerPage],
       },
       updatedAt: Date.now(),
@@ -581,7 +604,7 @@ function BoardEditorPage() {
 
                 <div className="board-side-panel__info">
                   <p>
-                    Save the points before creating and linking the question pages.
+                    Type the points, then create the flow. The value will be saved automatically.
                   </p>
                 </div>
 
@@ -635,7 +658,7 @@ function BoardEditorPage() {
                     className="secondary-btn"
                     disabled={isSavingCell || isCreatingFlow}
                   >
-                    {isSavingCell ? "Saving..." : "Save points"}
+                    {isSavingCell ? "Saving..." : "Save"}
                   </button>
 
                   <button

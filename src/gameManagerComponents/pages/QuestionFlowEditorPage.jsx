@@ -520,6 +520,13 @@ function QuestionFlowEditorPage() {
     }
   }, [activePage]);
 
+  async function handleTabChange(nextPageId) {
+    if (nextPageId === activePageId) return;
+
+    await persistActivePageDraft();
+    setActivePageId(nextPageId);
+  }
+
   useEffect(() => {
     let isCancelled = false;
     const objectUrls = [];
@@ -683,56 +690,63 @@ function QuestionFlowEditorPage() {
     }
   }
 
-  async function handleSave(e) {
-    e.preventDefault();
-
-    if (!game || !activePage || isSaving) return;
+  async function persistActivePageDraft() {
+    if (!game || !activePage || isSaving) return false;
 
     setIsSaving(true);
 
-    const updatedPages = game.gameConfig.pages.map((page) => {
-      if (page.id !== activePage.id) return page;
+    try {
+      const updatedPages = game.gameConfig.pages.map((page) => {
+        if (page.id !== activePage.id) return page;
 
-      return {
-        ...page,
-        titleMode: draft.titleMode,
-        customTitle: draft.titleMode === "custom" ? draft.customTitle : "",
-        layout: draft.layout,
-        textBlocks: draft.textBlocks,
-        mediaItems: draft.mediaItems,
-        text: draft.textBlocks?.[0]?.value || "",
-        useCustomBackground: draft.useCustomBackground,
-        backgroundMediaId: draft.useCustomBackground ? draft.backgroundMediaId : "",
-        backgroundName: draft.useCustomBackground ? draft.backgroundName : "",
-        enableModifier: page.type === "question-step" ? draft.enableModifier : false,
-        modifierText:
-          page.type === "question-step" && draft.enableModifier
-            ? draft.modifierText
-            : "",
-        isSecretModifier:
-          page.type === "question-step" && draft.enableModifier
-            ? Boolean(draft.isSecretModifier)
-            : false,
-        enableTimer: page.type === "question-step" ? draft.enableTimer : false,
-        timerSeconds:
-          page.type === "question-step" && draft.enableTimer
-            ? draft.timerSeconds || 60
-            : 60,
+        return {
+          ...page,
+          titleMode: draft.titleMode,
+          customTitle: draft.titleMode === "custom" ? draft.customTitle : "",
+          layout: draft.layout,
+          textBlocks: draft.textBlocks,
+          mediaItems: draft.mediaItems,
+          text: draft.textBlocks?.[0]?.value || "",
+          useCustomBackground: draft.useCustomBackground,
+          backgroundMediaId: draft.useCustomBackground ? draft.backgroundMediaId : "",
+          backgroundName: draft.useCustomBackground ? draft.backgroundName : "",
+          enableModifier: page.type === "question-step" ? draft.enableModifier : false,
+          modifierText:
+            page.type === "question-step" && draft.enableModifier
+              ? draft.modifierText
+              : "",
+          isSecretModifier:
+            page.type === "question-step" && draft.enableModifier
+              ? Boolean(draft.isSecretModifier)
+              : false,
+          enableTimer: page.type === "question-step" ? draft.enableTimer : false,
+          timerSeconds:
+            page.type === "question-step" && draft.enableTimer
+              ? draft.timerSeconds || 60
+              : 60,
+        };
+      });
+
+      const updatedGame = {
+        ...game,
+        gameConfig: {
+          ...game.gameConfig,
+          pages: updatedPages,
+        },
+        updatedAt: Date.now(),
       };
-    });
 
-    const updatedGame = {
-      ...game,
-      gameConfig: {
-        ...game.gameConfig,
-        pages: updatedPages,
-      },
-      updatedAt: Date.now(),
-    };
+      await updateGame(updatedGame);
+      setGame(updatedGame);
+      return true;
+    } finally {
+      setIsSaving(false);
+    }
+  }
 
-    await updateGame(updatedGame);
-    setGame(updatedGame);
-    setIsSaving(false);
+  async function handleSave(e) {
+    e.preventDefault();
+    await persistActivePageDraft();
   }
 
   if (!game || !activePage) {
@@ -790,7 +804,7 @@ function QuestionFlowEditorPage() {
               className={`flow-editor-tab ${
                 page.id === activePageId ? "flow-editor-tab--active" : ""
               }`}
-              onClick={() => setActivePageId(page.id)}
+              onClick={() => handleTabChange(page.id)}
             >
               {getStepLabel(page, index)}
             </button>
@@ -1108,15 +1122,17 @@ function QuestionFlowEditorPage() {
               <button
                 type="button"
                 className="flow-editor-link-btn"
-                onClick={() =>
+                onClick={async () => {
+                  await persistActivePageDraft();
+
                   navigate(`/game/${id}/flow/${flowId}/play`, {
                     state: {
                       fromEditor: true,
                       returnTo: `/game/${id}/flow/${flowId}`,
                       editorState: location.state || null,
                     },
-                  })
-                }
+                  });
+                }}
               >
                 Open gameplay view
               </button>
