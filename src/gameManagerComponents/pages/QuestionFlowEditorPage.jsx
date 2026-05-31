@@ -24,12 +24,26 @@ const LAYOUT_OPTIONS = {
     mediaSlots: [],
     description: "One text block.",
   },
-  "texts-4": {
-    label: "4 texts",
+  "image-text": {
+    label: "Image + text",
     group: "basic",
-    textCount: 4,
+    textCount: 1,
+    mediaSlots: ["image"],
+    description: "One text block and one image.",
+  },
+  "audio-only": {
+    label: "1 audio",
+    group: "basic",
+    textCount: 0,
+    mediaSlots: ["audio"],
+    description: "One audio clip.",
+  },
+  "texts-4": {
+    label: "Five texts",
+    group: "basic",
+    textCount: 5,
     mediaSlots: [],
-    description: "Four separate text blocks.",
+    description: "1 question at the top and 4 answer options.",
   },
   "image-only": {
     label: "Only image",
@@ -66,13 +80,6 @@ const LAYOUT_OPTIONS = {
     mediaSlots: ["image", "image", "image", "image", "image", "image", "image", "image"],
     description: "Eight image slots.",
   },
-  "image-text": {
-    label: "Image + text",
-    group: "mixed",
-    textCount: 1,
-    mediaSlots: ["image"],
-    description: "One text block and one image.",
-  },
   "audio-image": {
     label: "Audio + image",
     group: "mixed",
@@ -107,13 +114,6 @@ const LAYOUT_OPTIONS = {
     textCount: 8,
     mediaSlots: ["image", "image", "image", "image", "image", "image", "image", "image"],
     description: "Eight paired text and image items.",
-  },
-  "audio-only": {
-    label: "Only audio",
-    group: "audio-video",
-    textCount: 0,
-    mediaSlots: ["audio"],
-    description: "One audio clip.",
   },
   "audio-text": {
     label: "Audio + text",
@@ -910,15 +910,23 @@ function QuestionFlowEditorPage() {
                           ? isAnswerPage
                             ? "Main text"
                             : "Question text"
-                          : `Text block ${index + 1}`}
+                          : draft.layout === "texts-4"
+                            ? index === 0
+                              ? "Question text"
+                              : `Option ${index}`
+                            : `Text block ${index + 1}`}
                       </span>
                       <textarea
                         value={block.value || ""}
                         onChange={(e) => updateTextBlock(block.id, e.target.value)}
                         placeholder={
-                          isAnswerPage
-                            ? "Write the text shown on the answer page"
-                            : "Write the text shown to players"
+                          draft.layout === "texts-4"
+                            ? index === 0
+                              ? "Write the question shown to players"
+                              : `Write option ${index}`
+                            : isAnswerPage
+                              ? "Write the text shown on the answer page"
+                              : "Write the text shown to players"
                         }
                       />
                     </label>

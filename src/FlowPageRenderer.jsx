@@ -96,12 +96,37 @@ function FlowPageRenderer({
           </div>
         );
 
-      case "texts-4":
+      case "texts-4": {
+        const questionBlock = textBlocks[0];
+        const optionBlocks = textBlocks.slice(1, 5);
+
         return (
-          <div className="flow-page-renderer__text-grid flow-page-renderer__text-grid--4">
-            {textBlocks.map(renderTextItem)}
+          <div className="flow-page-renderer__quiz-layout">
+            <div className="flow-page-renderer__quiz-question">
+              {questionBlock?.value ? (
+                <div className="flow-page-renderer__main-text">{questionBlock.value}</div>
+              ) : (
+                <div className="flow-page-renderer__empty">No question text added yet</div>
+              )}
+            </div>
+
+            <div className="flow-page-renderer__text-grid flow-page-renderer__text-grid--4">
+              {optionBlocks.map((block, index) => (
+                <div
+                  key={block?.id || index}
+                  className="flow-page-renderer__text-card flow-page-renderer__option-card"
+                >
+                  {block?.value ? (
+                    <div className="flow-page-renderer__main-text">{block.value}</div>
+                  ) : (
+                    <div className="flow-page-renderer__empty">No option text added yet</div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         );
+      }
 
       case "image-only":
       case "audio-only":

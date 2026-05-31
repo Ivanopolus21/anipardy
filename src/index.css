@@ -2982,3 +2982,57 @@ textarea {
   width: min(100%, 42vw, 640px);
   margin: 0 auto;
 }
+
+.flow-page-renderer__quiz-layout {
+  width: 100%;
+  display: grid;
+  gap: 18px;
+}
+
+.flow-page-renderer__quiz-question {
+  width: 100%;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 18px;
+}
+
+.flow-page-renderer__option-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 110px;
+  text-align: center;
+}
+
+.flow-page-renderer--preview .flow-page-renderer__quiz-layout {
+  gap: 12px;
+  min-height: 0;
+}
+
+.flow-page-renderer--preview .flow-page-renderer__quiz-question {
+  padding: 14px;
+  border-radius: 16px;
+}
+
+.flow-page-renderer--preview .flow-page-renderer__quiz-question .flow-page-renderer__empty {
+  min-height: 72px;
+  padding: 12px;
+  font-size: 0.8rem;
+}
+
+.flow-page-renderer--preview .flow-page-renderer__text-grid--4 {
+  gap: 10px;
+}
+
+.flow-page-renderer--preview .flow-page-renderer__option-card {
+  min-height: 64px;
+  padding: 10px;
+  border-radius: 14px;
+}
+
+.flow-page-renderer--preview .flow-page-renderer__option-card .flow-page-renderer__empty {
+  min-height: 44px;
+  padding: 8px;
+  font-size: 0.76rem;
+}
