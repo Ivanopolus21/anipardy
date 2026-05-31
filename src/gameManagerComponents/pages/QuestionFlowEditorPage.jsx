@@ -491,6 +491,17 @@ function QuestionFlowEditorPage() {
     );
   }, [selectedLayoutGroup]);
 
+  const orderedMediaItems = useMemo(() => {
+    if (draft.layout !== "audio-image") {
+      return draft.mediaItems;
+    }
+
+    return [
+      ...draft.mediaItems.filter((item) => item.type === "image"),
+      ...draft.mediaItems.filter((item) => item.type === "audio"),
+    ];
+  }, [draft.layout, draft.mediaItems]);
+
   useEffect(() => {
     if (!activePage) return;
 
@@ -920,7 +931,7 @@ function QuestionFlowEditorPage() {
               <div className="flow-editor-section">
                 <h3>Media content</h3>
                 <div className="flow-editor-stack">
-                  {draft.mediaItems.map((item, index) => {
+                  {orderedMediaItems.map((item, index) => {
                     const previewUrl = mediaPreviews[item.id] || "";
                     const accept =
                       item.type === "image"

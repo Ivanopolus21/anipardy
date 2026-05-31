@@ -118,6 +118,11 @@ function FlowPageRenderer({
       case "audio-text":
         return (
           <div className="flow-page-renderer__split">
+            <div className="flow-page-renderer__media-column">
+              {mediaItems[0] ? renderMediaItem(mediaItems[0]) : (
+                <div className="flow-page-renderer__media-placeholder">No media selected yet</div>
+              )}
+            </div>
             <div className="flow-page-renderer__text-column">
               {textBlocks[0]?.value ? (
                 <div className="flow-page-renderer__main-text">{textBlocks[0].value}</div>
@@ -125,26 +130,35 @@ function FlowPageRenderer({
                 <div className="flow-page-renderer__empty">No text added yet</div>
               )}
             </div>
-            <div className="flow-page-renderer__media-column">
-              {mediaItems[0] ? renderMediaItem(mediaItems[0]) : (
-                <div className="flow-page-renderer__media-placeholder">No media selected yet</div>
-              )}
-            </div>
           </div>
         );
 
-      case "audio-image":
+      case "audio-image": {
+        const imageItem = mediaItems.find((item) => item.type === "image");
+        const audioItem = mediaItems.find((item) => item.type === "audio");
+
         return (
           <div className="flow-page-renderer__split flow-page-renderer__split--stacked-media">
             <div className="flow-page-renderer__media-column">
-              {mediaItems.map((item, index) => (
-                <div key={item.id || index} className="flow-page-renderer__media-cell">
-                  {renderMediaItem(item)}
-                </div>
-              ))}
+              <div className="flow-page-renderer__media-cell">
+                {imageItem ? renderMediaItem(imageItem) : (
+                  <div className="flow-page-renderer__media-placeholder">
+                    No image selected yet
+                  </div>
+                )}
+              </div>
+
+              <div className="flow-page-renderer__media-cell">
+                {audioItem ? renderMediaItem(audioItem) : (
+                  <div className="flow-page-renderer__media-placeholder">
+                    No audio selected yet
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         );
+      }
 
       case "images-2":
       case "images-3":
