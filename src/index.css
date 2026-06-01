@@ -1068,12 +1068,6 @@ textarea {
   color: var(--text-strong);
 }
 
-.flow-editor-footer {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-start;
-}
-
 @media (max-width: 768px) {
   .flow-editor-page {
     padding: 16px;
@@ -1444,12 +1438,6 @@ textarea {
   line-height: 1.05;
 }
 
-.flow-page-renderer__body {
-  flex: 1;
-  display: flex;
-  align-items: center;
-}
-
 .flow-page-renderer__text-only,
 .flow-page-renderer__media-only {
   width: 100%;
@@ -1469,14 +1457,6 @@ textarea {
 .flow-page-renderer__text-column,
 .flow-page-renderer__media-column {
   min-width: 0;
-}
-
-.flow-page-renderer__main-text {
-  font-size: clamp(1.4rem, 2.2vw, 2.4rem);
-  line-height: 1.35;
-  font-weight: 600;
-  white-space: pre-wrap;
-  word-break: break-word;
 }
 
 .flow-page-renderer__empty,
@@ -3153,25 +3133,10 @@ textarea {
   gap: 4px;
 }
 
-.flow-editor-accordion__title-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-
 .flow-editor-accordion__title {
   font-size: 1rem;
   font-weight: 700;
   color: #a63df5;
-}
-
-.flow-editor-accordion__summary {
-  font-size: 0.84rem;
-  color: var(--text);
-  background: #f3f4f7;
-  border-radius: 999px;
-  padding: 4px 8px;
 }
 
 .flow-editor-accordion__subtitle {
@@ -3222,15 +3187,9 @@ textarea {
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-.flow-page-renderer__main-text {
-  font-weight: 600;
-  line-height: 1.45;
-  letter-spacing: -0.01em;
-}
-
 .flow-page-renderer__empty {
   font-style: italic;
-  color: rgba(0, 0, 0, 0.55);
+  color: rgb(255 0 0 / 0.55);
 }
 
 .flow-page-renderer__media-block {
@@ -3243,5 +3202,15 @@ textarea {
   line-height: 1.4;
   color: rgba(255, 255, 255, 0.72);
   font-size: 1.5rem;
+}
+
+.flow-page-renderer__top-question {
+  width: 100%;
+  display: block;
+}
+
+.flow-page-renderer__layout {
+  width: 100%;
+  display: block;
 }
 

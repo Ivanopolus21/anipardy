@@ -11,10 +11,19 @@ function FlowPageRenderer({
 
   const textBlocks = Array.isArray(page.textBlocks) ? page.textBlocks : [];
   const mediaItems = Array.isArray(page.mediaItems) ? page.mediaItems : [];
-  const showQuestionText = Boolean(page.showQuestionText);
-  const questionText = textBlocks[0]?.value || "";
+
+  const showQuestionText =
+    Boolean(page.showQuestionText) &&
+    page.layout !== "text-1" &&
+    page.layout !== "text-2" &&
+    page.layout !== "text-5";
+
+  const questionText = showQuestionText ? textBlocks[0]?.value || "" : "";
+  const contentTextBlocks = showQuestionText ? textBlocks.slice(1) : textBlocks;
+
   const timerDisplay =
     typeof page.timerSeconds === "number" ? page.timerSeconds : 60;
+
   const showModifier = Boolean(page.enableModifier && page.modifierText?.trim());
   const isSecretModifier = Boolean(page.isSecretModifier);
   const modifierDisplayText = showModifier
@@ -80,11 +89,11 @@ function FlowPageRenderer({
     return null;
   }
 
-  const renderQuestionText = () => {
+  const renderTopQuestionText = () => {
     if (!showQuestionText) return null;
 
     return (
-      <div className="flow-page-renderer__question-text">
+      <div className="flow-page-renderer__top-question">
         {questionText ? (
           <div className="flow-page-renderer__main-text">{questionText}</div>
         ) : (
@@ -160,31 +169,14 @@ function FlowPageRenderer({
       }
 
       case "image-1":
-        return (
-          <div className="flow-page-renderer__media-only">
-            {renderQuestionText()}
-            {mediaItems[0] ? renderMediaItem(mediaItems[0]) : (
-              <div className="flow-page-renderer__media-placeholder">No media selected yet</div>
-            )}
-          </div>
-        );
-
       case "audio-1":
-        return (
-          <div className="flow-page-renderer__media-only">
-            {renderQuestionText()}
-            {mediaItems[0] ? renderMediaItem(mediaItems[0]) : (
-              <div className="flow-page-renderer__media-placeholder">No media selected yet</div>
-            )}
-          </div>
-        );
-
       case "video-1":
         return (
           <div className="flow-page-renderer__media-only">
-            {renderQuestionText()}
             {mediaItems[0] ? renderMediaItem(mediaItems[0]) : (
-              <div className="flow-page-renderer__media-placeholder">No video selected yet</div>
+              <div className="flow-page-renderer__media-placeholder">
+                No media selected yet
+              </div>
             )}
           </div>
         );
@@ -210,7 +202,6 @@ function FlowPageRenderer({
 
         return (
           <div className="flow-page-renderer__split flow-page-renderer__split--stacked-media">
-            {renderQuestionText()}
             <div className="flow-page-renderer__media-column">
               <div className="flow-page-renderer__media-cell">
                 {imageItem ? renderMediaItem(imageItem) : (
@@ -235,8 +226,10 @@ function FlowPageRenderer({
       default:
         return (
           <div className="flow-page-renderer__text-only">
-            {textBlocks[0]?.value ? (
-              <div className="flow-page-renderer__main-text">{textBlocks[0].value}</div>
+            {contentTextBlocks[0]?.value ? (
+              <div className="flow-page-renderer__main-text">
+                {contentTextBlocks[0].value}
+              </div>
             ) : (
               <div className="flow-page-renderer__empty">No text added yet</div>
             )}
@@ -283,7 +276,12 @@ function FlowPageRenderer({
           </h2>
         </header>
 
-        <div className="flow-page-renderer__body">{renderLayout()}</div>
+        <div className="flow-page-renderer__body">
+          {renderTopQuestionText()}
+          <div className="flow-page-renderer__layout">
+            {renderLayout()}
+          </div>
+        </div>
 
         {page.type === "answer" && (page.answer || page.explanation) ? (
           <footer className="flow-page-renderer__answer-box">
