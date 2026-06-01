@@ -3215,3 +3215,33 @@ textarea {
 .flow-editor-title-box {
   margin-top: 14px;
 }
+
+.flow-page-renderer__question-text {
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.flow-page-renderer__main-text {
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+}
+
+.flow-page-renderer__empty {
+  font-style: italic;
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.flow-page-renderer__media-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.flow-page-renderer__media-caption {
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 1.5rem;
+}
+

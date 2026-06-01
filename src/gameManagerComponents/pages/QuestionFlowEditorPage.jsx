@@ -10,136 +10,88 @@ import FlowPageRenderer from "../../FlowPageRenderer.jsx";
 import "../../index.css";
 
 const LAYOUT_GROUPS = [
-  { id: "basic", label: "Basic" },
-  { id: "image", label: "Image" },
-  { id: "mixed", label: "Mixed" },
-  { id: "audio-video", label: "Audio / Video" },
+  { id: "texts", label: "Texts" },
+  { id: "images", label: "Images" },
+  { id: "audio", label: "Audio" },
+  { id: "video", label: "Video" },
+  { id: "combined", label: "Combined" },
 ];
 
 const LAYOUT_OPTIONS = {
-  "text-only": {
-    label: "Text only",
-    group: "basic",
+  "text-1": {
+    label: "1 text",
+    group: "texts",
     textCount: 1,
     mediaSlots: [],
     description: "One text block.",
   },
-  "image-text": {
-    label: "Image + text",
-    group: "basic",
-    textCount: 1,
-    mediaSlots: ["image"],
-    description: "One text block and one image.",
+  "text-2": {
+    label: "2 texts",
+    group: "texts",
+    textCount: 2,
+    mediaSlots: [],
+    description: "Two text blocks.",
   },
-  "audio-only": {
-    label: "1 audio",
-    group: "basic",
-    textCount: 0,
-    mediaSlots: ["audio"],
-    description: "One audio clip.",
-  },
-  "texts-4": {
-    label: "Five texts",
-    group: "basic",
+  "text-5": {
+    label: "5 texts",
+    group: "texts",
     textCount: 5,
     mediaSlots: [],
-    description: "1 question at the top and 4 answer options.",
+    description: "Question text and four answer options.",
   },
-  "image-only": {
-    label: "Only image",
-    group: "image",
+  "image-1": {
+    label: "1 image",
+    group: "images",
     textCount: 0,
     mediaSlots: ["image"],
     description: "One image or GIF.",
   },
-  "images-2": {
+  "image-2": {
     label: "2 images",
-    group: "image",
+    group: "images",
     textCount: 0,
     mediaSlots: ["image", "image"],
     description: "Two image slots.",
   },
-  "images-3": {
+  "image-3": {
     label: "3 images",
-    group: "image",
+    group: "images",
     textCount: 0,
     mediaSlots: ["image", "image", "image"],
     description: "Three image slots.",
   },
-  "images-4": {
+  "image-4": {
     label: "4 images",
-    group: "image",
+    group: "images",
     textCount: 0,
     mediaSlots: ["image", "image", "image", "image"],
     description: "Four image slots.",
   },
-  "images-8": {
-    label: "8 images",
-    group: "image",
+  "audio-1": {
+    label: "1 audio",
+    group: "audio",
     textCount: 0,
-    mediaSlots: ["image", "image", "image", "image", "image", "image", "image", "image"],
-    description: "Eight image slots.",
-  },
-  "audio-image": {
-    label: "Audio + image",
-    group: "mixed",
-    textCount: 0,
-    mediaSlots: ["audio", "image"],
-    description: "One audio slot and one image slot.",
-  },
-  "images-text-2": {
-    label: "2 images + 2 texts",
-    group: "mixed",
-    textCount: 2,
-    mediaSlots: ["image", "image"],
-    description: "Two paired text and image items.",
-  },
-  "images-text-3": {
-    label: "3 images + 3 texts",
-    group: "mixed",
-    textCount: 3,
-    mediaSlots: ["image", "image", "image"],
-    description: "Three paired text and image items.",
-  },
-  "images-text-4": {
-    label: "4 images + 4 texts",
-    group: "mixed",
-    textCount: 4,
-    mediaSlots: ["image", "image", "image", "image"],
-    description: "Four paired text and image items.",
-  },
-  "images-text-8": {
-    label: "8 images + 8 texts",
-    group: "mixed",
-    textCount: 8,
-    mediaSlots: ["image", "image", "image", "image", "image", "image", "image", "image"],
-    description: "Eight paired text and image items.",
-  },
-  "audio-text": {
-    label: "Audio + text",
-    group: "audio-video",
-    textCount: 1,
     mediaSlots: ["audio"],
-    description: "One text block and one audio clip.",
+    description: "One audio clip.",
   },
-  "video-only": {
-    label: "Only video",
-    group: "audio-video",
+  "video-1": {
+    label: "1 video",
+    group: "video",
     textCount: 0,
     mediaSlots: ["video"],
     description: "One video clip.",
   },
-  "videos-2-text": {
-    label: "2 videos + text",
-    group: "audio-video",
-    textCount: 1,
-    mediaSlots: ["video", "video"],
-    description: "Two videos with one text block.",
+  "image-audio": {
+    label: "Image + audio",
+    group: "combined",
+    textCount: 0,
+    mediaSlots: ["image", "audio"],
+    description: "One image and one audio clip.",
   },
 };
 
 function getLayoutDefinition(layout) {
-  return LAYOUT_OPTIONS[layout] || LAYOUT_OPTIONS["text-only"];
+  return LAYOUT_OPTIONS[layout] || LAYOUT_OPTIONS["text-1"];
 }
 
 function getDefaultGroupForLayout(layout) {
@@ -161,6 +113,7 @@ function createEmptyMediaItem(type = "image") {
     name: "",
     mimeType: "",
     alt: "",
+    caption: "",
     wasOptimized: false,
     width: null,
     height: null,
@@ -175,10 +128,21 @@ function normalizeMediaItem(item = {}, forcedType) {
     name: item.name || "",
     mimeType: item.mimeType || "",
     alt: item.alt || "",
+    caption: item.caption || "",
     wasOptimized: Boolean(item.wasOptimized),
     width: item.width ?? null,
     height: item.height ?? null,
   };
+}
+
+function getEffectiveTextCount(layout, showQuestionText) {
+  const definition = getLayoutDefinition(layout);
+
+  if (layout === "text-1" || layout === "text-2" || layout === "text-5") {
+    return definition.textCount;
+  }
+
+  return definition.textCount + (showQuestionText ? 1 : 0);
 }
 
 function buildSizedTextBlocks(sourceBlocks = [], count = 0) {
@@ -316,8 +280,9 @@ async function createStoredMediaRecord(file) {
 }
 
 function normalizePageContent(page) {
-  const layout = page.layout || "text-only";
+  const layout = page.layout || "text-1";
   const definition = getLayoutDefinition(layout);
+  const showQuestionText = Boolean(page.showQuestionText);
 
   const existingText =
     Array.isArray(page.textBlocks) && page.textBlocks.length > 0
@@ -333,7 +298,10 @@ function normalizePageContent(page) {
 
   return {
     layout,
-    textBlocks: buildSizedTextBlocks(existingText, definition.textCount),
+    textBlocks: buildSizedTextBlocks(
+      existingText,
+      getEffectiveTextCount(layout, showQuestionText)
+    ),
     mediaItems: buildSizedMediaItems(existingMedia, definition.mediaSlots),
   };
 }
@@ -410,11 +378,11 @@ function QuestionFlowEditorPage() {
 
   const [game, setGame] = useState(null);
   const [activePageId, setActivePageId] = useState("");
-  const [selectedLayoutGroup, setSelectedLayoutGroup] = useState("basic");
+  const [selectedLayoutGroup, setSelectedLayoutGroup] = useState("texts");
   const [draft, setDraft] = useState({
     titleMode: "auto",
     customTitle: "",
-    layout: "text-only",
+    layout: "text-1",
     textBlocks: [createEmptyTextBlock()],
     mediaItems: [],
     useCustomBackground: false,
@@ -425,6 +393,7 @@ function QuestionFlowEditorPage() {
     isSecretModifier: false,
     enableTimer: false,
     timerSeconds: 60,
+    showQuestionText: false,
   });
   const [isSaving, setIsSaving] = useState(false);
   const [mediaPreviews, setMediaPreviews] = useState({});
@@ -459,12 +428,16 @@ function QuestionFlowEditorPage() {
   function handleLayoutChange(nextLayout) {
     const definition = getLayoutDefinition(nextLayout);
 
-    setDraft((current) => ({
-      ...current,
-      layout: nextLayout,
-      textBlocks: buildSizedTextBlocks(current.textBlocks, definition.textCount),
-      mediaItems: buildSizedMediaItems(current.mediaItems, definition.mediaSlots),
-    }));
+    setDraft((current) => {
+      const nextTextCount = getEffectiveTextCount(nextLayout, current.showQuestionText);
+
+      return {
+        ...current,
+        layout: nextLayout,
+        textBlocks: buildSizedTextBlocks(current.textBlocks, nextTextCount),
+        mediaItems: buildSizedMediaItems(current.mediaItems, definition.mediaSlots),
+      };
+    });
 
     setOpenSections((current) => ({
       ...current,
@@ -575,7 +548,7 @@ function QuestionFlowEditorPage() {
   }, [selectedLayoutGroup]);
 
   const orderedMediaItems = useMemo(() => {
-    if (draft.layout !== "audio-image") {
+    if (draft.layout !== "image-audio") {
       return draft.mediaItems;
     }
 
@@ -604,6 +577,7 @@ function QuestionFlowEditorPage() {
       isSecretModifier: Boolean(activePage.isSecretModifier),
       enableTimer: Boolean(activePage.enableTimer),
       timerSeconds: activePage.timerSeconds ?? 60,
+      showQuestionText: Boolean(activePage.showQuestionText),
     });
 
     const defaultGroup = getDefaultGroupForLayout(normalized.layout);
@@ -803,6 +777,7 @@ function QuestionFlowEditorPage() {
           useCustomBackground: draft.useCustomBackground,
           backgroundMediaId: draft.useCustomBackground ? draft.backgroundMediaId : "",
           backgroundName: draft.useCustomBackground ? draft.backgroundName : "",
+          showQuestionText: draft.showQuestionText,
           enableModifier: page.type === "question-step" ? draft.enableModifier : false,
           modifierText:
             page.type === "question-step" && draft.enableModifier
@@ -863,6 +838,10 @@ function QuestionFlowEditorPage() {
   const mediaPreviewMap = Object.fromEntries(
     draft.mediaItems.map((item) => [item.id, mediaPreviews[item.id] || ""])
   );
+  const shouldShowRegularTextSection =
+    draft.layout === "text-1" ||
+    draft.layout === "text-2" ||
+    draft.layout === "text-5";
 
   return (
     <section className="flow-editor-page">
@@ -1002,7 +981,46 @@ function QuestionFlowEditorPage() {
               isOpen={openSections.content}
               onToggle={() => toggleSection("content")}
             >
-              {currentLayoutDefinition.textCount > 0 && (
+              <label className="flow-editor-checkbox">
+                <input
+                  type="checkbox"
+                  checked={draft.showQuestionText}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+
+                    setDraft((current) => ({
+                      ...current,
+                      showQuestionText: checked,
+                      textBlocks: buildSizedTextBlocks(
+                        current.textBlocks,
+                        getEffectiveTextCount(current.layout, checked)
+                      ),
+                    }));
+                  }}
+                />
+                <span>Show question text at the top</span>
+              </label>
+              {draft.showQuestionText &&
+                draft.layout !== "text-1" &&
+                draft.layout !== "text-2" &&
+                draft.layout !== "text-5" && (
+                  <div className="flow-editor-section">
+                    <h3>Question text</h3>
+                    <label className="flow-editor-field">
+                      <span>Top question text</span>
+                      <textarea
+                        value={draft.textBlocks[0]?.value || ""}
+                        onChange={(e) => {
+                          const firstBlockId = draft.textBlocks[0]?.id;
+                          if (!firstBlockId) return;
+                          updateTextBlock(firstBlockId, e.target.value);
+                        }}
+                        placeholder="Write the question shown above the media"
+                      />
+                    </label>
+                  </div>
+                )}
+              {shouldShowRegularTextSection && (
                 <div className="flow-editor-section">
                   <div className="flow-editor-stack">
                     {draft.textBlocks.map((block, index) => (
@@ -1012,7 +1030,7 @@ function QuestionFlowEditorPage() {
                 ? isAnswerPage
                   ? "Main text"
                   : "Question text"
-                : draft.layout === "texts-4"
+                : draft.layout === "text-5"
                   ? index === 0
                     ? "Question text"
                     : `Option ${index}`
@@ -1022,7 +1040,7 @@ function QuestionFlowEditorPage() {
                           value={block.value || ""}
                           onChange={(e) => updateTextBlock(block.id, e.target.value)}
                           placeholder={
-                            draft.layout === "texts-4"
+                            draft.layout === "text-5"
                               ? index === 0
                                 ? "Write the question shown to players"
                                 : `Write option ${index}`
@@ -1074,17 +1092,15 @@ function QuestionFlowEditorPage() {
                             </div>
                           )}
 
-                          {item.type === "image" && (
-                            <label className="flow-editor-field">
-                              <span>Alt text</span>
-                              <input
-                                type="text"
-                                value={item.alt || ""}
-                                onChange={(e) => updateMediaItem(item.id, "alt", e.target.value)}
-                                placeholder="Describe the image briefly"
-                              />
-                            </label>
-                          )}
+                          <label className="flow-editor-field">
+                            <span>Caption</span>
+                            <input
+                              type="text"
+                              value={item.caption || ""}
+                              onChange={(e) => updateMediaItem(item.id, "caption", e.target.value)}
+                              placeholder="Optional caption shown under this media"
+                            />
+                          </label>
 
                           {previewUrl && item.type === "image" && (
                             <div className="flow-editor-preview">
@@ -1270,6 +1286,7 @@ function QuestionFlowEditorPage() {
                   mediaItems: draft.mediaItems,
                   useCustomBackground: draft.useCustomBackground,
                   backgroundMediaId: draft.backgroundMediaId,
+                  showQuestionText: draft.showQuestionText,
                   enableModifier: draft.enableModifier,
                   modifierText: draft.modifierText,
                   isSecretModifier: draft.isSecretModifier,
