@@ -1213,7 +1213,10 @@ textarea {
 .flow-page-renderer__body {
   flex: 1;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 18px;
 }
 
 .flow-page-renderer__text-only,
@@ -3187,18 +3190,21 @@ textarea {
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-.flow-page-renderer__empty {
-  font-style: italic;
-  color: rgb(255 0 0 / 0.55);
-}
-
 .flow-page-renderer__media-block {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 0.5rem;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
 }
 
 .flow-page-renderer__media-caption {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+  text-align: center;
   line-height: 1.4;
   color: rgba(255, 255, 255, 0.72);
   font-size: 1.5rem;
@@ -3206,11 +3212,28 @@ textarea {
 
 .flow-page-renderer__top-question {
   width: 100%;
-  display: block;
+  display: flex;
+  justify-content: center;
+  text-align: center;
+}
+
+.flow-page-renderer__top-question .flow-page-renderer__main-text,
+.flow-page-renderer__top-question .flow-page-renderer__empty {
+  max-width: min(900px, 100%);
+  margin: 0 auto;
+  text-align: center;
 }
 
 .flow-page-renderer__layout {
   width: 100%;
-  display: block;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flow-page-renderer--preview .flow-page-renderer__media-caption {
+  font-size: 0.85rem;
+  line-height: 1.3;
 }
 
