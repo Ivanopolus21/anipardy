@@ -3163,12 +3163,12 @@ textarea {
 .flow-editor-accordion__title {
   font-size: 1rem;
   font-weight: 700;
-  color: var(--text);
+  color: #a63df5;
 }
 
 .flow-editor-accordion__summary {
   font-size: 0.84rem;
-  color: var(--text-muted);
+  color: var(--text);
   background: #f3f4f7;
   border-radius: 999px;
   padding: 4px 8px;
@@ -3176,7 +3176,7 @@ textarea {
 
 .flow-editor-accordion__subtitle {
   font-size: 0.88rem;
-  color: var(--text-muted);
+  color: var(--text);
 }
 
 .flow-editor-accordion__icon {
@@ -3197,12 +3197,6 @@ textarea {
   background: #fcfcfe;
 }
 
-.flow-editor-accordion__content {
-  padding: 14px 18px 18px;
-  border-top: 1px solid var(--border);
-  background: #fcfcfe;
-}
-
 .flow-editor-accordion__title-row {
   display: flex;
   flex-wrap: wrap;
@@ -3212,8 +3206,12 @@ textarea {
 
 .flow-editor-accordion__summary {
   font-size: 0.84rem;
-  color: var(--text-muted);
+  color: var(--text);
   background: #f3f4f7;
   border-radius: 999px;
   padding: 5px 10px;
+}
+
+.flow-editor-title-box {
+  margin-top: 14px;
 }

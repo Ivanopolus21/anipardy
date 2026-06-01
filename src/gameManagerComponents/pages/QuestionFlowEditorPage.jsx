@@ -908,7 +908,7 @@ function QuestionFlowEditorPage() {
           <form className="flow-editor-card flow-editor-panel" onSubmit={handleSave}>
             <EditorSection
               title="Page config"
-              subtitle="Player-facing title and page basics"
+              subtitle="Title"
               isOpen={openSections.pageConfig}
               onToggle={() => toggleSection("pageConfig")}
               summary={draft.titleMode === "custom" ? effectiveTitle : "Automatic title"}
@@ -999,13 +999,11 @@ function QuestionFlowEditorPage() {
 
             <EditorSection
               title="Contents"
-              subtitle="Texts, images, audio and video for this layout"
               isOpen={openSections.content}
               onToggle={() => toggleSection("content")}
             >
               {currentLayoutDefinition.textCount > 0 && (
                 <div className="flow-editor-section">
-                  <h3>Text content</h3>
                   <div className="flow-editor-stack">
                     {draft.textBlocks.map((block, index) => (
                       <label className="flow-editor-field" key={block.id}>
@@ -1115,7 +1113,6 @@ function QuestionFlowEditorPage() {
 
             <EditorSection
               title="Background"
-              subtitle="Use category background or override it for this page"
               isOpen={openSections.background}
               onToggle={() => toggleSection("background")}
               summary={draft.useCustomBackground ? "Custom override enabled" : "Using category background"}
