@@ -1012,7 +1012,6 @@ function QuestionFlowEditorPage() {
                   <div className="flow-editor-section">
                     <h3>Question text</h3>
                     <label className="flow-editor-field">
-                      <span>Top question text</span>
                       <textarea
                         value={draft.textBlocks[0]?.value || ""}
                         onChange={(e) => {
@@ -1062,7 +1061,6 @@ function QuestionFlowEditorPage() {
 
               {currentLayoutDefinition.mediaSlots.length > 0 && (
                 <div className="flow-editor-section">
-                  <h3>Media content</h3>
                   <div className="flow-editor-stack">
                     {orderedMediaItems.map((item, index) => {
                       const previewUrl = mediaPreviews[item.id] || "";
@@ -1076,8 +1074,8 @@ function QuestionFlowEditorPage() {
                       return (
                         <div className="flow-editor-media-card" key={item.id}>
                           <div className="flow-editor-media-card__header">
-                            <h4>Media slot {index + 1}</h4>
-                            <span>{item.type}</span>
+                            <h4>{item.type.charAt(0).toUpperCase() + item.type.slice(1)} {index + 1}</h4>
+                            {/*<span>{item.type}</span>*/}
                           </div>
 
                           <label className="flow-editor-field">
