@@ -3321,3 +3321,30 @@ textarea {
   font-size: clamp(0.82rem, 0.9vw, 1.02rem);
   line-height: 1.22;
 }
+
+.flow-page-renderer--preview .flow-page-renderer__top-question .flow-page-renderer__question-card {
+  max-width: min(100%, 320px);
+  padding: 10px 14px;
+  border-radius: 14px;
+}
+
+.flow-page-renderer--preview .flow-page-renderer__top-question .flow-page-renderer__empty {
+  min-height: 40px;
+  padding: 6px 10px;
+  font-size: 0.74rem;
+  line-height: 1.2;
+}
+
+.flow-page-renderer__top-question .flow-page-renderer__question-card {
+  width: fit-content;
+  max-width: min(100%, 820px);
+  padding: 14px 22px;
+  border-radius: 20px;
+}
+
+.flow-page-renderer__top-question .flow-page-renderer__empty {
+  min-height: 52px;
+  padding: 8px 14px;
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
