@@ -94,11 +94,13 @@ function FlowPageRenderer({
 
     return (
       <div className="flow-page-renderer__top-question">
-        {questionText ? (
-          <div className="flow-page-renderer__main-text">{questionText}</div>
-        ) : (
-          <div className="flow-page-renderer__empty">No question text added yet</div>
-        )}
+        <div className="flow-page-renderer__question-card">
+          {questionText ? (
+            <div className="flow-page-renderer__main-text">{questionText}</div>
+          ) : (
+            <div className="flow-page-renderer__empty">No question text added yet</div>
+          )}
+        </div>
       </div>
     );
   };
@@ -144,7 +146,7 @@ function FlowPageRenderer({
 
         return (
           <div className="flow-page-renderer__quiz-layout">
-            <div className="flow-page-renderer__quiz-question">
+            <div className="flow-page-renderer__quiz-question flow-page-renderer__question-card">
               {questionBlock?.value ? (
                 <div className="flow-page-renderer__main-text">{questionBlock.value}</div>
               ) : (
