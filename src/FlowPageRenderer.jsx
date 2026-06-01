@@ -108,11 +108,13 @@ function FlowPageRenderer({
       case "text-1":
         return (
           <div className="flow-page-renderer__text-only">
-            {textBlocks[0]?.value ? (
-              <div className="flow-page-renderer__main-text">{textBlocks[0].value}</div>
-            ) : (
-              <div className="flow-page-renderer__empty">No text added yet</div>
-            )}
+            <div className="flow-page-renderer__text-card">
+              {textBlocks[0]?.value ? (
+                <div className="flow-page-renderer__main-text">{textBlocks[0].value}</div>
+              ) : (
+                <div className="flow-page-renderer__empty">No text added yet</div>
+              )}
+            </div>
           </div>
         );
 

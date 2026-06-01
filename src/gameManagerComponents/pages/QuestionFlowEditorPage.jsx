@@ -441,7 +441,7 @@ function QuestionFlowEditorPage() {
 
     setOpenSections((current) => ({
       ...current,
-      layoutOption: false,
+      layoutOption: true,
       content: true,
       background: false,
     }));
@@ -842,6 +842,10 @@ function QuestionFlowEditorPage() {
     draft.layout === "text-1" ||
     draft.layout === "text-2" ||
     draft.layout === "text-5";
+  const supportsTopQuestionText =
+    draft.layout !== "text-1" &&
+    draft.layout !== "text-2" &&
+    draft.layout !== "text-5";
 
   return (
     <section className="flow-editor-page">
@@ -981,25 +985,26 @@ function QuestionFlowEditorPage() {
               isOpen={openSections.content}
               onToggle={() => toggleSection("content")}
             >
-              <label className="flow-editor-checkbox">
-                <input
-                  type="checkbox"
-                  checked={draft.showQuestionText}
-                  onChange={(e) => {
-                    const checked = e.target.checked;
-
-                    setDraft((current) => ({
-                      ...current,
-                      showQuestionText: checked,
-                      textBlocks: buildSizedTextBlocks(
-                        current.textBlocks,
-                        getEffectiveTextCount(current.layout, checked)
-                      ),
-                    }));
-                  }}
-                />
-                <span>Show question text at the top</span>
-              </label>
+              {supportsTopQuestionText ? (
+                <label className="flow-editor-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={draft.showQuestionText}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setDraft((current) => ({
+                        ...current,
+                        showQuestionText: checked,
+                        textBlocks: buildSizedTextBlocks(
+                          current.textBlocks,
+                          getEffectiveTextCount(current.layout, checked)
+                        ),
+                      }));
+                    }}
+                  />
+                  <span>Show question text at the top</span>
+                </label>
+              ) : null}
               {draft.showQuestionText &&
                 draft.layout !== "text-1" &&
                 draft.layout !== "text-2" &&
