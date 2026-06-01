@@ -1248,15 +1248,6 @@ textarea {
   word-break: break-word;
 }
 
-.flow-page-renderer__image,
-.flow-page-renderer__video {
-  width: 100%;
-  max-height: 52vh;
-  object-fit: contain;
-  border-radius: 20px;
-  background: rgba(0, 0, 0, 0.28);
-}
-
 .flow-page-renderer__audio {
   width: 100%;
 }
@@ -1481,8 +1472,8 @@ textarea {
   width: 100%;
   max-height: 52vh;
   object-fit: contain;
-  border-radius: 20px;
-  background: rgba(0, 0, 0, 0.28);
+  border-radius: 0;
+  background: transparent;
 }
 
 .flow-page-renderer__audio {
