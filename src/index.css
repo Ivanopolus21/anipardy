@@ -1089,7 +1089,7 @@ textarea {
   padding: 18px 20px;
   border: 1px solid var(--border);
   border-radius: 18px;
-  background: var(--accent-soft);
+  background: #fff;
 }
 
 .flow-editor-title-box__label {
@@ -2222,7 +2222,7 @@ textarea {
 .flow-editor-panel__header h2 {
   margin: 0 0 6px 0;
   font-size: 1.1rem;
-  color: var(--question-config-title);
+  color: #0b1020;
 }
 
 .flow-editor-panel__header p {
@@ -2801,7 +2801,7 @@ textarea {
   padding: 16px;
   border: 1px solid var(--border);
   border-radius: 18px;
-  background: var(--accent-soft);
+  background: #fff;
 }
 
 .flow-editor-media-card__header {
@@ -3113,12 +3113,12 @@ textarea {
   gap: 16px;
   padding: 16px 18px;
   border: 0;
-  background: #fff;
+  background: var(--accent-soft);
   text-align: left;
 }
 
 .flow-editor-accordion__trigger:hover {
-  background: #fafafa;
+  background: var(--accent-soft);
 }
 
 .flow-editor-accordion__heading {
@@ -3131,7 +3131,7 @@ textarea {
 .flow-editor-accordion__title {
   font-size: 1rem;
   font-weight: 700;
-  color: var(--question-config-title);
+  color: #0b1020;
 }
 
 .flow-editor-accordion__subtitle {
@@ -3154,7 +3154,7 @@ textarea {
 .flow-editor-accordion__content {
   padding: 0 18px 18px;
   border-top: 1px solid var(--border);
-  background: #fcfcfe;
+  background: var(--accent-soft);
 }
 
 .flow-editor-accordion__title-row {
