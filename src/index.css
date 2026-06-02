@@ -9,6 +9,7 @@
   --accent: #a63df5;
   --sec-btn-background: #dadada;
   --question-config-title: #793d78;
+  --active-option-choice: rgb(239 220 255 / 0.1);
 
   /* Core palette */
   --board-tone-000: #fcfcff;
@@ -2756,8 +2757,8 @@ textarea {
 }
 
 .flow-editor-layout-group--active {
-  background: var(--accent-soft);
-  border-color: var(--accent-border);
+  background: var(--active-option-choice);
+  border: 2px solid black;
 }
 
 .flow-editor-layout-grid {
@@ -2782,8 +2783,9 @@ textarea {
 }
 
 .flow-editor-layout-card--active {
-  background: var(--accent-soft);
-  border-color: var(--accent-border);
+  background: var(--active-option-choice);
+  border-color: #0b1020;
+  border: 2px solid black;
 }
 
 .flow-editor-layout-card__title {
@@ -3166,7 +3168,7 @@ textarea {
 
 .flow-editor-accordion__summary {
   font-size: 0.84rem;
-  color: var(--text);
+  color: #3d3a3f;
   background: #f3f4f7;
   border-radius: 999px;
   padding: 5px 10px;
@@ -3351,5 +3353,5 @@ textarea {
 }
 
 .flow-editor-section .flow-editor-stack {
-  gap: 40px;
+  gap: 25px;
 }
