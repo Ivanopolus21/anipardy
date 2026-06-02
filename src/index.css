@@ -3356,6 +3356,6 @@ textarea {
   gap: 25px;
 }
 
-.manager-page__header .secondary-btn {
-  margin-bottom: 30px;
+.manager-page__back-btn {
+  margin-bottom: 12px;
 }

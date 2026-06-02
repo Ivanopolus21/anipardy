@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getGames } from "../../db.js";
+import { getGames, deleteGameById } from "../../db.js";
 import '../../index.css'
 
 function MainPage() {
@@ -15,6 +15,16 @@ function MainPage() {
 
         loadGames();
     }, []);
+
+    async function removeGame(gameId, event) {
+        event.stopPropagation();
+
+        const confirmed = window.confirm("Do you really want to remove this game?");
+        if (!confirmed) return;
+
+        await deleteGameById(gameId);
+        setGames((current) => current.filter((game) => game.id !== gameId));
+    }
 
     function openGame(game) {
         if (game.gameConfig?.players?.length > 0) {
@@ -35,10 +45,19 @@ function MainPage() {
 
             <div className="games-grid">
                 {games.map((game) => (
-                    <div key={game.id} className="game-card" onClick={() => openGame(game)}>
-                        <h2>{game.name}</h2>
-                        <p>Created on {new Date(game.createdAt).toLocaleDateString()}</p>
-                    </div>
+                  <div key={game.id} className="game-card" onClick={() => openGame(game)}>
+                      <div className="page-card__top">
+                          <h2>{game.name}</h2>
+                          <button
+                            type="button"
+                            className="page-card__delete-btn"
+                            onClick={(e) => removeGame(game.id, e)}
+                          >
+                              Remove
+                          </button>
+                      </div>
+                      <p>Created on {new Date(game.createdAt).toLocaleDateString()}</p>
+                  </div>
                 ))}
             </div>
         </section>

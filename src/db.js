@@ -52,3 +52,8 @@ export async function getAllMedia() {
     const db = await dbPromise;
     return await db.getAll("media");
 }
+
+export async function deleteGameById(id) {
+    const db = await dbPromise;
+    await db.delete("games", id);
+}

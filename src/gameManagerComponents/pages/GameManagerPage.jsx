@@ -148,7 +148,7 @@ function GameManagerPage() {
               <div>
                   <button
                     type="button"
-                    className="secondary-btn"
+                    className="secondary-btn manager-page__back-btn"
                     onClick={() => navigate("/")}
                   >
                       Back to all games
