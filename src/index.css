@@ -3355,3 +3355,7 @@ textarea {
 .flow-editor-section .flow-editor-stack {
   gap: 25px;
 }
+
+.manager-page__header .secondary-btn {
+  margin-bottom: 30px;
+}

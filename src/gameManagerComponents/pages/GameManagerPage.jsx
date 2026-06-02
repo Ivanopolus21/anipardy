@@ -146,11 +146,21 @@ function GameManagerPage() {
       <section className="manager-page">
           <div className="manager-page__header">
               <div>
+                  <button
+                    type="button"
+                    className="secondary-btn"
+                    onClick={() => navigate("/")}
+                  >
+                      Back to all games
+                  </button>
                   <h1>{game.name}</h1>
               </div>
 
-              <div className="manager-page__actions ">
-                  <button className={"primary-btn"} onClick={() => navigate(`/game/${game.id}/setup`)}>
+              <div className="manager-page__actions">
+                  <button
+                    className="primary-btn"
+                    onClick={() => navigate(`/game/${game.id}/setup`)}
+                  >
                       Edit players
                   </button>
                   <button
