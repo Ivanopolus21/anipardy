@@ -3787,4 +3787,5 @@ textarea {
 .bingo-host-player--active:hover {
   border-color: var(--accent);
   background: var(--accent-soft);
+  transform: translateY(-1px);
 }
