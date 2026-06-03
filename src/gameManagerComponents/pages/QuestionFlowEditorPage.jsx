@@ -5,6 +5,7 @@ import {
   updateGame,
   saveMedia,
   getMediaById,
+  findMediaByCacheKey,
 } from "../../db.js";
 import FlowPageRenderer from "../../FlowPageRenderer.jsx";
 import "../../index.css";
@@ -248,14 +249,33 @@ async function optimizeImageToBlob(file) {
 async function createStoredMediaRecord(file) {
   let processed = {
     blob: file,
-    mimeType: file.type || "",
+    mimeType: file.type,
     wasOptimized: false,
     width: null,
     height: null,
   };
 
-  if (file.type.startsWith("image/")) {
+  if (file.type.startsWith("image")) {
     processed = await optimizeImageToBlob(file);
+  }
+
+  const size = processed.blob.size || file.size || 0;
+
+  const existingMedia = await findMediaByCacheKey({
+    name: file.name,
+    mimeType: processed.mimeType,
+    size,
+  });
+
+  if (existingMedia) {
+    return {
+      mediaId: existingMedia.id,
+      name: existingMedia.name,
+      mimeType: existingMedia.mimeType,
+      wasOptimized: Boolean(existingMedia.wasOptimized),
+      width: existingMedia.width ?? processed.width,
+      height: existingMedia.height ?? processed.height,
+    };
   }
 
   const mediaRecord = {
@@ -263,7 +283,10 @@ async function createStoredMediaRecord(file) {
     blob: processed.blob,
     name: file.name,
     mimeType: processed.mimeType,
-    size: processed.blob.size || file.size || 0,
+    size,
+    wasOptimized: processed.wasOptimized,
+    width: processed.width,
+    height: processed.height,
     createdAt: Date.now(),
   };
 
@@ -273,9 +296,9 @@ async function createStoredMediaRecord(file) {
     mediaId: mediaRecord.id,
     name: mediaRecord.name,
     mimeType: mediaRecord.mimeType,
-    wasOptimized: processed.wasOptimized,
-    width: processed.width,
-    height: processed.height,
+    wasOptimized: mediaRecord.wasOptimized,
+    width: mediaRecord.width,
+    height: mediaRecord.height,
   };
 }
 

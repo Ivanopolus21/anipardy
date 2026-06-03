@@ -1,14 +1,38 @@
 import { openDB } from "idb";
 
-export const dbPromise = openDB("anipardy-db", 2, {
-    upgrade(db, oldVersion) {
+function normalizeMediaValue(value) {
+    return String(value || "").trim().toLowerCase();
+}
+
+export function buildMediaCacheKey({ name, mimeType, size }) {
+    return [
+        normalizeMediaValue(name),
+        normalizeMediaValue(mimeType),
+        String(size ?? ""),
+    ].join("::");
+}
+
+export const dbPromise = openDB("anipardy-db", 3, {
+    upgrade(db, oldVersion, newVersion, transaction) {
         if (!db.objectStoreNames.contains("games")) {
             db.createObjectStore("games", { keyPath: "id" });
         }
 
+        let mediaStore;
+
         if (!db.objectStoreNames.contains("media")) {
-            const mediaStore = db.createObjectStore("media", { keyPath: "id" });
+            mediaStore = db.createObjectStore("media", { keyPath: "id" });
             mediaStore.createIndex("createdAt", "createdAt");
+        } else {
+            mediaStore = transaction.objectStore("media");
+        }
+
+        if (!mediaStore.indexNames.contains("createdAt")) {
+            mediaStore.createIndex("createdAt", "createdAt");
+        }
+
+        if (!mediaStore.indexNames.contains("cacheKey")) {
+            mediaStore.createIndex("cacheKey", "cacheKey", { unique: false });
         }
     },
 });
@@ -35,7 +59,25 @@ export async function updateGame(updatedGame) {
 
 export async function saveMedia(mediaRecord) {
     const db = await dbPromise;
-    await db.put("media", mediaRecord);
+
+    const recordWithCacheKey = {
+        ...mediaRecord,
+        cacheKey:
+          mediaRecord.cacheKey ||
+          buildMediaCacheKey({
+              name: mediaRecord.name,
+              mimeType: mediaRecord.mimeType,
+              size: mediaRecord.size,
+          }),
+    };
+
+    await db.put("media", recordWithCacheKey);
+}
+
+export async function findMediaByCacheKey({ name, mimeType, size }) {
+    const db = await dbPromise;
+    const cacheKey = buildMediaCacheKey({ name, mimeType, size });
+    return await db.getFromIndex("media", "cacheKey", cacheKey);
 }
 
 export async function getMediaById(id) {
