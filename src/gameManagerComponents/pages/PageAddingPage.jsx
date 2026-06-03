@@ -22,8 +22,19 @@ function PageAddingPage() {
     loadGame();
   }, [id, navigate]);
 
+  const hasSupergamePage = (game?.gameConfig?.pages || []).some(
+    (page) => page.type === "supergame"
+  );
+
   async function addPage(type) {
     if (!game) return;
+
+    if (
+      type === "supergame" &&
+      game.gameConfig?.pages?.some((page) => page.type === "supergame")
+    ) {
+      return;
+    }
 
     const newPage = {
       id: crypto.randomUUID(),
@@ -42,6 +53,7 @@ function PageAddingPage() {
     };
 
     await updateGame(updatedGame);
+    setGame(updatedGame);
 
     if (type === "board") {
       navigate(`/game/${game.id}/board/${newPage.id}/setup`);
@@ -49,6 +61,11 @@ function PageAddingPage() {
     }
 
     navigate(`/game/${game.id}`);
+  }
+
+  function handleAddSupergame() {
+    if (!game || hasSupergamePage) return;
+    navigate(`/game/${game.id}/supergame/new`);
   }
 
   if (!game) return <p>Loading...</p>;
@@ -67,11 +84,16 @@ function PageAddingPage() {
 
           <button
             type="button"
-            onClick={() => navigate(`/game/${game.id}/supergame/new`)}
+            onClick={handleAddSupergame}
             className="page-type-card"
+            disabled={hasSupergamePage}
           >
             <h2>Supergame page</h2>
-            <p>A special final or bonus round page.</p>
+            <p>
+              {hasSupergamePage
+                ? "A Supergame already exists for this game."
+                : "A special final or bonus round page."}
+            </p>
           </button>
         </div>
 

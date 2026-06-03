@@ -3789,3 +3789,8 @@ textarea {
   background: var(--accent-soft);
   transform: translateY(-1px);
 }
+
+.page-type-card:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
