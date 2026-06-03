@@ -24,7 +24,8 @@ function BingoPlayerPage({
   const rewards = page?.bingoConfig?.rewards || {};
 
   const [previewRevealedCellIds, setPreviewRevealedCellIds] = useState({});
-  const [bingoNotice, setBingoNotice] = useState("");
+  const [bingoNoticeLine1, setBingoNoticeLine1] = useState("");
+  const [bingoNoticeLine2, setBingoNoticeLine2] = useState("");
   const [hasGameEnded, setHasGameEnded] = useState(false);
 
   const isPreview = mode === "preview";
@@ -44,7 +45,8 @@ function BingoPlayerPage({
   }
 
   function handleResetClick() {
-    setBingoNotice("");
+    setBingoNoticeLine1("");
+    setBingoNoticeLine2("");
     setHasGameEnded(false);
     onResetGrid?.();
   }
@@ -55,6 +57,7 @@ function BingoPlayerPage({
     const rewards = page?.bingoConfig?.rewards || {};
     const cellPoints = Number(rewards.cellPoints) || 0;
     const bingoPoints = Number(rewards.bingoPoints) || 0;
+    const mostCellsPoints = Number(rewards.mostCellsPoints) || 0;
     const size = Number(page?.bingoConfig?.size) || 4;
 
     const basePages = (game.gameConfig?.pages || []).map((entry) => {
@@ -84,6 +87,38 @@ function BingoPlayerPage({
     const updatedCells = updatedPage?.bingoConfig?.cells || [];
     const bingoHit = hasAnyBingoByRevealStatus(updatedCells, size);
 
+    // If there is a bingo, figure out who has the most cells
+    const mostCellsWinner = bingoHit ? getMostCellsWinner(updatedCells) : null;
+
+    const nextPlayers = (game.gameConfig?.players || game.players || []).map((player, index) => {
+      const normalizedId =
+        typeof player === "string" ? `player-${index}` : player.id || `player-${index}`;
+
+      const baseScore = typeof player === "string" ? 0 : Number(player.score || 0);
+
+      let extra = 0;
+
+      if (normalizedId === selectedPlayerId && bingoHit && bingoPoints > 0) {
+        extra += bingoPoints;
+      }
+
+      if (
+        mostCellsWinner &&
+        mostCellsWinner.playerId === normalizedId &&
+        mostCellsPoints > 0
+      ) {
+        extra += mostCellsPoints;
+      }
+
+      const nextScore = baseScore + cellPoints + extra;
+
+      if (typeof player === "string") {
+        return { id: normalizedId, name: player, score: nextScore };
+      }
+
+      return { ...player, id: normalizedId, score: nextScore };
+    });
+
     const finalPages = basePages.map((entry) => {
       if (entry.id !== page.id) return entry;
       if (!bingoHit) return entry;
@@ -105,26 +140,6 @@ function BingoPlayerPage({
       };
     });
 
-    const nextPlayers = (game.gameConfig?.players || game.players || []).map((player, index) => {
-      const normalizedId =
-        typeof player === "string" ? `player-${index}` : player.id || `player-${index}`;
-
-      const baseScore = typeof player === "string" ? 0 : Number(player.score || 0);
-
-      if (normalizedId !== selectedPlayerId) {
-        return typeof player === "string"
-          ? { id: normalizedId, name: player, score: baseScore }
-          : { ...player, score: baseScore };
-      }
-
-      let nextScore = baseScore + cellPoints;
-      if (bingoHit && bingoPoints > 0) nextScore += bingoPoints;
-
-      return typeof player === "string"
-        ? { id: normalizedId, name: player, score: nextScore }
-        : { ...player, score: nextScore };
-    });
-
     const updatedGame = {
       ...game,
       players: nextPlayers,
@@ -141,9 +156,22 @@ function BingoPlayerPage({
       onUpdateGame?.(updatedGame);
 
       if (bingoHit) {
-        const playerName =
-          nextPlayers.find((player) => player.id === selectedPlayerId)?.name || "Player";
-        setBingoNotice(`${playerName} got Bingo +${bingoPoints}${currency}!`);
+        const closerName =
+          nextPlayers.find((player) => player.id === selectedPlayerId)?.name ||
+          "Player";
+
+        const line1 = `${closerName} got Bingo! +${bingoPoints}${currency}`;
+
+        let line2 = "";
+        if (mostCellsWinner) {
+          const mostCellsPlayer =
+            nextPlayers.find((p) => p.id === mostCellsWinner.playerId) || null;
+          const mostName = mostCellsPlayer?.name || "Player";
+          line2 = `${mostName} got the most revealed cells! +${mostCellsPoints}${currency}`;
+        }
+
+        setBingoNoticeLine1(line1);
+        setBingoNoticeLine2(line2);
         setHasGameEnded(true);
       }
     } catch (error) {
@@ -268,6 +296,39 @@ function BingoPlayerPage({
       }
     }
     return antiDiagonal;
+  }
+
+  function getMostCellsWinner(cells) {
+    const counts = new Map();
+
+    cells.forEach((cell) => {
+      if (!cell?.isRevealed) return;
+
+      const ownerId = cell.claimedByPlayerId || null;
+      if (!ownerId) return;
+
+      counts.set(ownerId, (counts.get(ownerId) || 0) + 1);
+    });
+
+    let bestId = null;
+    let bestCount = 0;
+    let isTie = false;
+
+    for (const [playerId, count] of counts.entries()) {
+      if (count > bestCount) {
+        bestId = playerId;
+        bestCount = count;
+        isTie = false;
+      } else if (count === bestCount && bestCount > 0) {
+        isTie = true;
+      }
+    }
+
+    if (!bestId || bestCount <= 0 || isTie) {
+      return null;
+    }
+
+    return { playerId: bestId, count: bestCount };
   }
 
   return (
@@ -416,9 +477,13 @@ function BingoPlayerPage({
           </div>
         ) : null}
 
-        {bingoNotice ? (
-          <div className="bingo-player-theme-card manager-card" style={{ marginTop: "16px" }}>
-            <p>{bingoNotice}</p>
+        {bingoNoticeLine1 || bingoNoticeLine2 ? (
+          <div
+            className="bingo-player-theme-card manager-card"
+            style={{ marginTop: "16px" }}
+          >
+            {bingoNoticeLine1 && <p>{bingoNoticeLine1}</p>}
+            {bingoNoticeLine2 && <p>{bingoNoticeLine2}</p>}
           </div>
         ) : null}
 
