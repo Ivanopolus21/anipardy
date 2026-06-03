@@ -331,7 +331,7 @@ function normalizePageContent(page) {
 
 function getStepLabel(page, index) {
   if (page.type === "answer") return "Answer";
-  return `Question ${index + 1}`;
+  return `Question`;
 }
 
 function EditorSection({
@@ -876,10 +876,6 @@ function QuestionFlowEditorPage() {
         <div className="flow-editor-header">
           <div>
             <h1>{autoTitle}</h1>
-            <p>
-              Editing a flow with {questionPagesCount} question page
-              {questionPagesCount !== 1 ? "s" : ""} and 1 answer page in {game.name}.
-            </p>
           </div>
 
           <div className="flow-editor-actions">
@@ -1161,7 +1157,7 @@ function QuestionFlowEditorPage() {
             >
               <div className="flow-editor-field">
                 <p className="flow-editor-title-help">
-                  This page uses the category background by default. Enable this only to override it for this specific page.
+                  You can override the background for this specific page.
                 </p>
               </div>
 
@@ -1223,7 +1219,7 @@ function QuestionFlowEditorPage() {
                         type="text"
                         value={draft.modifierText}
                         onChange={(e) => updateDraftField("modifierText", e.target.value)}
-                        placeholder="Example: X2 points"
+                        placeholder="X2 points"
                       />
                     </div>
 

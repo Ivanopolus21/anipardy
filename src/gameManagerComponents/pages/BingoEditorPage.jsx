@@ -196,7 +196,6 @@ function BingoEditorPage() {
           <div>
             <h1>{game.name}</h1>
             <p>
-              {bingoPage.name ? `Editing Bingo: ${bingoPage.name}. ` : ""}
               Click a cell to define the text that players will see after that cell is revealed.
             </p>
           </div>

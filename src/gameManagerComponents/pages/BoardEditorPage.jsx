@@ -602,7 +602,7 @@ function BoardEditorPage() {
                     type="text"
                     inputMode="numeric"
                     value={pointsInput}
-                    placeholder={`e.g. 100 ${currency}`}
+                    placeholder={`e.g. 100 (without ccy)`}
                     onChange={(e) => {
                       const value = e.target.value;
                       if (value === "" || /^\d+$/.test(value)) {
@@ -620,7 +620,7 @@ function BoardEditorPage() {
 
                 <div className="board-side-panel__info">
                   <p>
-                    Column background applies to all flow pages in this category unless a page has its own background override.
+                    Column background applies to all flow pages in this category. You can override it for each page as well.
                   </p>
                 </div>
 

@@ -248,13 +248,6 @@ function BoardPlayerPage() {
               <div className="board-editor-header">
                   <div>
                       <h1>{game.name}</h1>
-                      {bingoPage ? (
-                        <p>
-                            {areAllBoardsFinished
-                              ? "All board questions are completed. You can start the Bingo final."
-                              : "Bingo final is available at any time from this screen."}
-                        </p>
-                      ) : null}
                   </div>
 
                   <div className="manager-page__actions">

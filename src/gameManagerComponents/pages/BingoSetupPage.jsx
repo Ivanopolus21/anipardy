@@ -252,8 +252,9 @@ function BingoSetupPage() {
         </div>
 
         <div className="board-setup-categories">
-          <h2>Cell names</h2>
-
+          <h2>Cell (revealed) names </h2>
+          <p>Configure which names each cell will have upon revealing. Hidden cells will just be enumerated, you cannot change this.</p>
+          <br></br>
           <div className="board-setup-categories-grid">
             {cells.slice(0, cellCount).map((cell, index) => (
               <label key={cell.id} className="board-setup-field">
