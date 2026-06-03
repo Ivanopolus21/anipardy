@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { updateGame } from "../db.js";
+import { useNavigate } from "react-router-dom";
 import "../index.css";
 
 function BingoPlayerPage({
@@ -9,7 +10,14 @@ function BingoPlayerPage({
                            currency,
                            mode = "play",
                            onUpdateGame,
+                           selectedPlayerId,
+                           onSelectPlayer,
+                           onRevealAll,
+                           onAwardBingoBonus,
+                           onAwardMostCellsBonus,
+                           onResetGrid,
                          }) {
+  const navigate = useNavigate();
   const size = Number(page?.bingoConfig?.size) || 4;
   const cells = page?.bingoConfig?.cells || [];
   const themeText = page?.bingoConfig?.themeText || "";
@@ -34,7 +42,10 @@ function BingoPlayerPage({
   }
 
   async function handleLiveCellClick(cell) {
-    if (!game || !page || !cell?.id) return;
+    if (!game || !page || !cell?.id || !selectedPlayerId) return;
+
+    const rewards = page?.bingoConfig?.rewards || {};
+    const cellPoints = Number(rewards.cellPoints) || 0;
 
     const updatedPages = (game.gameConfig?.pages || []).map((entry) => {
       if (entry.id !== page.id) return entry;
@@ -46,6 +57,7 @@ function BingoPlayerPage({
         return {
           ...existingCell,
           isRevealed: true,
+          claimedByPlayerId: selectedPlayerId,
         };
       });
 
@@ -58,11 +70,48 @@ function BingoPlayerPage({
       };
     });
 
+    const nextPlayers = (game.gameConfig?.players || game.players || []).map(
+      (player, index) => {
+        const normalizedId =
+          typeof player === "string" ? `player-${index}` : player.id || `player-${index}`;
+
+        if (normalizedId !== selectedPlayerId) {
+          if (typeof player === "string") {
+            return {
+              id: normalizedId,
+              name: player,
+              score: 0,
+            };
+          }
+
+          return {
+            ...player,
+            score: Number(player.score || 0),
+          };
+        }
+
+        if (typeof player === "string") {
+          return {
+            id: normalizedId,
+            name: player,
+            score: cellPoints,
+          };
+        }
+
+        return {
+          ...player,
+          score: Number(player.score || 0) + cellPoints,
+        };
+      }
+    );
+
     const updatedGame = {
       ...game,
+      players: nextPlayers,
       gameConfig: {
         ...game.gameConfig,
         pages: updatedPages,
+        players: nextPlayers,
       },
       updatedAt: Date.now(),
     };
@@ -134,7 +183,7 @@ function BingoPlayerPage({
                 : Boolean(cell.isRevealed);
 
               const isClaimed = Boolean(cell.claimedByPlayerId);
-              const canInteract = isPreview || (!isClaimed && !isRevealed);
+              const canInteract = isPreview || (!isClaimed && !isRevealed && Boolean(selectedPlayerId));
 
               const mainText = isRevealed
                 ? cell.openText || cell.text || ""
@@ -173,6 +222,53 @@ function BingoPlayerPage({
             })}
           </div>
         </div>
+
+        {!isPreview && players?.length > 0 ? (
+          <div className="bingo-host-bar">
+            <div className="bingo-host-bar__row">
+              {players.map((player) => (
+                <button
+                  key={player.id}
+                  type="button"
+                  className={
+                    player.id === selectedPlayerId
+                      ? "bingo-host-player bingo-host-player--active"
+                      : "bingo-host-player"
+                  }
+                  onClick={() => onSelectPlayer?.(player.id)}
+                >
+                  <span className="bingo-host-player__name">{player.name}</span>
+                </button>
+              ))}
+
+              <div className="bingo-host-bar__divider" aria-hidden="true" />
+
+              <button type="button" className="secondary-btn" onClick={onAwardBingoBonus}>
+                Award Bingo
+              </button>
+
+              <button type="button" className="secondary-btn" onClick={onAwardMostCellsBonus}>
+                Award most cells
+              </button>
+
+              <button type="button" className="secondary-btn" onClick={onRevealAll}>
+                Reveal all
+              </button>
+
+              <button type="button" className="secondary-btn" onClick={onResetGrid}>
+                Reset grid
+              </button>
+
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={() => navigate(`/game/${game.id}/winner`)}
+              >
+                Show winner
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         {players?.length > 0 && (
           <div className="board-score-strip">

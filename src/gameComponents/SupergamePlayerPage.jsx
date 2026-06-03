@@ -33,6 +33,7 @@ function normalizePlayers(game) {
   });
 }
 
+
 function SupergamePlayerPage() {
   const { id, pageId } = useParams();
   const navigate = useNavigate();
@@ -43,6 +44,7 @@ function SupergamePlayerPage() {
   const [scoreAmount, setScoreAmount] = useState("");
   const [shouldSubtract, setShouldSubtract] = useState(false);
   const [isApplyingScore, setIsApplyingScore] = useState(false);
+  const [selectedBingoPlayerId, setSelectedBingoPlayerId] = useState("");
   const isPreviewMode = Boolean(location.state?.fromEditor);
 
   useEffect(() => {
@@ -82,6 +84,14 @@ function SupergamePlayerPage() {
   const players = useMemo(() => {
     return normalizePlayers(game);
   }, [game]);
+
+  useEffect(() => {
+    if (supergameType !== "bingo") return;
+
+    if (!selectedBingoPlayerId && players.length > 0) {
+      setSelectedBingoPlayerId(players[0].id);
+    }
+  }, [players, selectedBingoPlayerId, supergameType]);
 
   const currency = game?.currency || "Points";
   const usesIntegratedScoreLayout = supergameType === "bingo";
@@ -133,6 +143,154 @@ function SupergamePlayerPage() {
     }
   }
 
+  async function handleRevealAllBingoCells() {
+    if (!game || !page || supergameType !== "bingo") return;
+
+    const updatedPages = (game.gameConfig?.pages || []).map((entry) => {
+      if (entry.id !== page.id) return entry;
+
+      const existingCells = entry?.bingoConfig?.cells || [];
+      const nextCells = existingCells.map((cell) => {
+        if (cell.isRevealed) return cell;
+
+        return {
+          ...cell,
+          isRevealed: true,
+          claimedByPlayerId: cell.claimedByPlayerId || "",
+        };
+      });
+
+      return {
+        ...entry,
+        bingoConfig: {
+          ...entry.bingoConfig,
+          cells: nextCells,
+        },
+      };
+    });
+
+    const updatedGame = {
+      ...game,
+      gameConfig: {
+        ...game.gameConfig,
+        pages: updatedPages,
+      },
+      updatedAt: Date.now(),
+    };
+
+    try {
+      await updateGame(updatedGame);
+      setGame(updatedGame);
+    } catch (error) {
+      console.error("Failed to reveal all Bingo cells:", error);
+    }
+  }
+
+  async function handleAwardBingoBonus() {
+    if (!game || !selectedBingoPlayerId || supergameType !== "bingo") return;
+
+    const bingoPoints = Number(page?.bingoConfig?.rewards?.bingoPoints) || 0;
+    if (!bingoPoints) return;
+
+    const nextPlayers = (game.gameConfig?.players || game.players || []).map((player, index) => {
+      const normalizedId =
+        typeof player === "string" ? `player-${index}` : player.id || `player-${index}`;
+
+      if (normalizedId !== selectedBingoPlayerId) {
+        return typeof player === "string"
+          ? { id: normalizedId, name: player, score: 0 }
+          : { ...player, score: Number(player.score || 0) };
+      }
+
+      return typeof player === "string"
+        ? { id: normalizedId, name: player, score: bingoPoints }
+        : { ...player, score: Number(player.score || 0) + bingoPoints };
+    });
+
+    const updatedGame = {
+      ...game,
+      players: nextPlayers,
+      gameConfig: {
+        ...game.gameConfig,
+        players: nextPlayers,
+      },
+      updatedAt: Date.now(),
+    };
+
+    await updateGame(updatedGame);
+    setGame(updatedGame);
+  }
+
+  async function handleAwardMostCellsBonus() {
+    if (!game || !selectedBingoPlayerId || supergameType !== "bingo") return;
+
+    const mostCellsPoints = Number(page?.bingoConfig?.rewards?.mostCellsPoints) || 0;
+    if (!mostCellsPoints) return;
+
+    const nextPlayers = (game.gameConfig?.players || game.players || []).map((player, index) => {
+      const normalizedId =
+        typeof player === "string" ? `player-${index}` : player.id || `player-${index}`;
+
+      if (normalizedId !== selectedBingoPlayerId) {
+        return typeof player === "string"
+          ? { id: normalizedId, name: player, score: 0 }
+          : { ...player, score: Number(player.score || 0) };
+      }
+
+      return typeof player === "string"
+        ? { id: normalizedId, name: player, score: mostCellsPoints }
+        : { ...player, score: Number(player.score || 0) + mostCellsPoints };
+    });
+
+    const updatedGame = {
+      ...game,
+      players: nextPlayers,
+      gameConfig: {
+        ...game.gameConfig,
+        players: nextPlayers,
+      },
+      updatedAt: Date.now(),
+    };
+
+    await updateGame(updatedGame);
+    setGame(updatedGame);
+  }
+
+  async function handleResetBingoGrid() {
+    if (!game || !page || supergameType !== "bingo") return;
+
+    const updatedPages = (game.gameConfig?.pages || []).map((entry) => {
+      if (entry.id !== page.id) return entry;
+
+      const existingCells = entry?.bingoConfig?.cells || [];
+      const nextCells = existingCells.map((cell) => ({
+        ...cell,
+        isRevealed: false,
+        claimedByPlayerId: "",
+      }));
+
+      return {
+        ...entry,
+        bingoConfig: {
+          ...entry.bingoConfig,
+          cells: nextCells,
+        },
+      };
+    });
+
+    const updatedGame = {
+      ...game,
+      gameConfig: {
+        ...game.gameConfig,
+        pages: updatedPages,
+      },
+      updatedAt: Date.now(),
+    };
+
+    await updateGame(updatedGame);
+    setGame(updatedGame);
+  }
+
   if (!game || !page) {
     return <p>Loading...</p>;
   }
@@ -160,6 +318,12 @@ function SupergamePlayerPage() {
             currency={currency}
             mode={isPreviewMode ? "preview" : "play"}
             onUpdateGame={setGame}
+            selectedPlayerId={selectedBingoPlayerId}
+            onSelectPlayer={setSelectedBingoPlayerId}
+            onRevealAll={handleRevealAllBingoCells}
+            onAwardBingoBonus={handleAwardBingoBonus}
+            onAwardMostCellsBonus={handleAwardMostCellsBonus}
+            onResetGrid={handleResetBingoGrid}
           />
         ) : (
           <div className="supergame-player-fallback">

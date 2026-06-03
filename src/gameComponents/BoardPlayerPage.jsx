@@ -50,11 +50,36 @@ function BoardPlayerPage() {
         );
     }, [game]);
 
+    const bingoPage = useMemo(() => {
+        return (game?.gameConfig?.pages || []).find(
+          (page) =>
+            page.type === "supergame" &&
+            page.supergameType === "bingo" &&
+            page.isConfigured
+        ) || null;
+    }, [game]);
+
     const hasCompletedQuestions = useMemo(() => {
         return (boardPage?.categories || []).some((category) =>
           (category.questions || []).some((question) => question?.isCompleted)
         );
     }, [boardPage]);
+
+    const isCurrentBoardFinished = useMemo(() => {
+        return (boardPage?.categories || []).every((category) =>
+          (category.questions || []).every((question) => Boolean(question?.isCompleted))
+        );
+    }, [boardPage]);
+
+    const areAllBoardsFinished = useMemo(() => {
+        if (!boardPages.length) return false;
+
+        return boardPages.every((page) =>
+          (page.categories || []).every((category) =>
+            (category.questions || []).every((question) => Boolean(question?.isCompleted))
+          )
+        );
+    }, [boardPages]);
 
     const flowMap = useMemo(() => {
         const pages = game?.gameConfig?.pages || [];
@@ -223,6 +248,13 @@ function BoardPlayerPage() {
               <div className="board-editor-header">
                   <div>
                       <h1>{game.name}</h1>
+                      {bingoPage ? (
+                        <p>
+                            {areAllBoardsFinished
+                              ? "All board questions are completed. You can start the Bingo final."
+                              : "Bingo final is available at any time from this screen."}
+                        </p>
+                      ) : null}
                   </div>
 
                   <div className="manager-page__actions">
@@ -323,6 +355,31 @@ function BoardPlayerPage() {
                       )}
                   </div>
               </div>
+
+              {bingoPage ? (
+                <div className="board-bingo-launch">
+                    <button
+                      type="button"
+                      className={`board-bingo-launch__button ${
+                        areAllBoardsFinished ? "board-bingo-launch__button--ready" : ""
+                      }`}
+                      onClick={() => navigate(`/play/${id}/supergame/${bingoPage.id}`, {
+                          state: {
+                              returnTo: `/play/${id}/board/${pageId}`,
+                          },
+                      })}
+                    >
+                  <span className="board-bingo-launch__title">
+                    {areAllBoardsFinished ? "SUPERGAME" : "SUPERGAME"}
+                  </span>
+                    <span className="board-bingo-launch__text">
+                    {areAllBoardsFinished
+                      ? "All board questions completed."
+                      : ""}
+                  </span>
+                    </button>
+                </div>
+              ) : null}
 
               {players.length > 0 && (
                 <div className="board-score-strip">
