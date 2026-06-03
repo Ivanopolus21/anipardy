@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getGameById, updateGame } from "../../db.js";
 
-function PageAddingPage() {
+function SupergameTypePage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [game, setGame] = useState(null);
@@ -22,13 +22,16 @@ function PageAddingPage() {
     loadGame();
   }, [id, navigate]);
 
-  async function addPage(type) {
+  async function addSupergame(supergameType) {
     if (!game) return;
 
     const newPage = {
       id: crypto.randomUUID(),
-      type,
+      type: "supergame",
+      supergameType: "bingo",
+      isConfigured: false,
       title: "",
+      name: "Bingo",
       createdAt: Date.now(),
     };
 
@@ -42,13 +45,7 @@ function PageAddingPage() {
     };
 
     await updateGame(updatedGame);
-
-    if (type === "board") {
-      navigate(`/game/${game.id}/board/${newPage.id}/setup`);
-      return;
-    }
-
-    navigate(`/game/${game.id}`);
+    navigate(`/game/${game.id}/supergame/${newPage.id}/setup`);
   }
 
   if (!game) return <p>Loading...</p>;
@@ -56,29 +53,25 @@ function PageAddingPage() {
   return (
     <section className="page-adding-page">
       <div className="page-adding-card">
-        <h1>Add a new page</h1>
-        <h2>Choose what kind of page you want to add to {game.name}.</h2>
+        <h1>Choose a supergame type</h1>
+        <h2>Select which kind of supergame you want to add to {game.name}.</h2>
 
         <div className="page-type-grid">
-          <button onClick={() => addPage("board")} className="page-type-card">
-            <h2>The Board</h2>
-            <p>A board with categories, question values and players' scores.</p>
-          </button>
-
           <button
             type="button"
-            onClick={() => navigate(`/game/${game.id}/supergame/new`)}
+            onClick={() => addSupergame("bingo")}
             className="page-type-card"
           >
-            <h2>Supergame page</h2>
-            <p>A special final or bonus round page.</p>
+            <h2>Bingo</h2>
+            <p>A bingo-style final or bonus round page.</p>
           </button>
         </div>
 
         <div className="page-adding-actions">
           <button
             className="secondary-btn"
-            onClick={() => navigate(`/game/${game.id}`)}
+            type="button"
+            onClick={() => navigate(`/game/${game.id}/pages/new`)}
           >
             Back
           </button>
@@ -88,4 +81,4 @@ function PageAddingPage() {
   );
 }
 
-export default PageAddingPage;
+export default SupergameTypePage;

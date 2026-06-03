@@ -8,11 +8,13 @@ import PageAddingPage from "./gameManagerComponents/pages/PageAddingPage.jsx";
 import BoardSetupPage from "./gameManagerComponents/pages/BoardSetupPage.jsx";
 import BoardEditorPage from "./gameManagerComponents/pages/BoardEditorPage.jsx";
 import QuestionFlowEditorPage from "./gameManagerComponents/pages/QuestionFlowEditorPage.jsx";
-import SupergameEditorPage from "./gameManagerComponents/pages/SupergameEditorPage.jsx";
 import GameFlowPlayerPage from "../src/gameComponents/GameFlowPlayerPage.jsx";
 import BoardPlayerPage from "./gameComponents/BoardPlayerPage.jsx";
 import SupergamePlayerPage from "./gameComponents/SupergamePlayerPage.jsx";
 import WinnerPage from "./gameComponents/WinnerPage.jsx";
+import SupergameTypePage from "./gameManagerComponents/pages/SupergameTypePage.jsx";
+import BingoSetupPage from "./gameManagerComponents/pages/BingoSetupPage.jsx";
+import BingoEditorPage from "./gameManagerComponents/pages/BingoEditorPage.jsx";
 
 function App() {
   return (
@@ -25,7 +27,9 @@ function App() {
       <Route path="/game/:id/board/:pageId/setup" element={<BoardSetupPage />} />
       <Route path="/game/:id/board/:pageId" element={<BoardEditorPage />} />
       <Route path="/game/:id/flow/:flowId" element={<QuestionFlowEditorPage />} />
-      <Route path="/game/:id/supergame/:pageId" element={<SupergameEditorPage />} />
+      <Route path="/game/:id/supergame/new" element={<SupergameTypePage />} />
+      <Route path="/game/:id/supergame/:pageId" element={<BingoEditorPage />} />
+      <Route path="/game/:id/supergame/:pageId/setup" element={<BingoSetupPage />} />
       <Route path="/game/:id/flow/:flowId/play" element={<GameFlowPlayerPage />} />
       <Route path="/play/:id/board/:pageId" element={<BoardPlayerPage />} />
       <Route path="/play/:id/supergame/:pageId" element={<SupergamePlayerPage />} />

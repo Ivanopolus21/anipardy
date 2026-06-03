@@ -3359,3 +3359,191 @@ textarea {
 .manager-page__back-btn {
   margin-bottom: 12px;
 }
+
+.bingo-player-page {
+  min-height: 100vh;
+  padding: 24px;
+  background: linear-gradient(180deg, #1f2d5c 0%, #15213e 100%);
+  color: white;
+}
+
+.bingo-player-header {
+  max-width: 1100px;
+  margin: 0 auto 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.bingo-player-rewards {
+  margin-bottom: 20px;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--text-strong);
+  border: 1px solid rgba(174, 190, 255, 0.5);
+  box-shadow: 0 12px 24px rgba(16, 24, 40, 0.12);
+}
+
+.bingo-player-rewards h2,
+.bingo-player-rewards h3,
+.bingo-player-rewards p,
+.bingo-player-rewards span,
+.bingo-player-rewards li {
+  color: var(--text-strong);
+}
+
+.bingo-player-grid {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  gap: 10px;
+}
+
+.bingo-player-cell {
+  min-height: 96px;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.18);
+  color: var(--board-ink-strong);
+  transition:
+          transform 0.18s ease,
+          border-color 0.18s ease,
+          background 0.18s ease,
+          box-shadow 0.18s ease,
+          color 0.18s ease,
+          filter 0.18s ease;
+}
+
+.bingo-player-cell--interactive:not(.bingo-player-cell--revealed):not(.bingo-player-cell--claimed):hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.28);
+  border-color: rgba(91, 104, 175, 0.42);
+  transform: translateY(-1px);
+}
+
+.bingo-player-cell:focus-visible {
+  outline: none;
+  border-color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(166, 61, 245, 0.22);
+}
+
+.bingo-player-cell .board-cell__main {
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.bingo-player-cell .board-cell__sub {
+  font-size: 0.85rem;
+  color: inherit;
+  opacity: 0.92;
+}
+
+.bingo-player-cell--interactive {
+  cursor: pointer;
+}
+
+.bingo-player-cell--revealed {
+  background: linear-gradient(135deg, var(--board-tone-200), var(--board-tone-300));
+  border-color: rgba(124, 142, 234, 0.65);
+  color: var(--board-ink-strong);
+}
+
+.bingo-player-cell--claimed {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: rgba(255, 255, 255, 0.74);
+}
+
+.bingo-player-cell--disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+@media (max-width: 768px) {
+  .bingo-player-cell {
+    min-height: 92px;
+    padding: 10px 8px;
+  }
+
+  .bingo-player-cell .board-cell__main {
+    font-size: 0.92rem;
+  }
+
+  .bingo-player-cell .board-cell__sub {
+    font-size: 0.76rem;
+  }
+}
+
+.bingo-player-cell--revealed,
+.bingo-player-cell--revealed:hover,
+.bingo-player-cell--revealed:focus-visible {
+  background: var(--board-cell-open-bg);
+  color: var(--board-cell-open-text);
+  border-color: var(--board-cell-open-border);
+  box-shadow: 0 10px 24px rgba(124, 142, 234, 0.12);
+  filter: none;
+}
+
+.bingo-player-cell--claimed,
+.bingo-player-cell--claimed:hover {
+  background: var(--board-cell-completed-bg);
+  color: var(--board-cell-completed-text);
+  border-color: var(--board-cell-completed-border);
+  box-shadow: none;
+  transform: none;
+}
+
+.bingo-player-cell .board-cell__main {
+  font-size: clamp(1rem, 1.8vw, 1.45rem);
+  font-weight: 700;
+  line-height: 1.05;
+  color: inherit;
+}
+
+.bingo-player-cell .board-cell__sub {
+  font-size: 0.8rem;
+  line-height: 1.15;
+  font-weight: 700;
+  color: inherit;
+  opacity: 0.9;
+}
+
+.bingo-player-cell:not(.bingo-player-cell--revealed):not(.bingo-player-cell--claimed) {
+  color: var(--board-ink-strong);
+}
+
+.bingo-player-rewards-inline {
+  margin-top: 8px;
+  font-size: 0.92rem;
+  color: var(--text);
+}
+
+.bingo-player-theme-card {
+  margin-bottom: 20px;
+}
+
+.bingo-player-theme-card h3 {
+  margin-bottom: 10px;
+}
+
+.bingo-player-theme-card p {
+  font-size: 1.15rem;
+  line-height: 1.5;
+  color: var(--text-strong);
+}
+
+.board-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}

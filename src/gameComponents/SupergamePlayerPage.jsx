@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { getGameById, getMediaById, updateGame } from "../db.js";
-import FlowPageRenderer from "../FlowPageRenderer.jsx";
+import { getGameById, updateGame } from "../db.js";
+import BingoPlayerPage from "./BingoPlayerPage.jsx";
 import "../index.css";
 
 function normalizePlayers(game) {
@@ -39,12 +39,11 @@ function SupergamePlayerPage() {
   const location = useLocation();
 
   const [game, setGame] = useState(null);
-  const [mediaPreviewMap, setMediaPreviewMap] = useState({});
-  const [backgroundPreviewUrl, setBackgroundPreviewUrl] = useState("");
   const [selectedPlayerId, setSelectedPlayerId] = useState("");
   const [scoreAmount, setScoreAmount] = useState("");
   const [shouldSubtract, setShouldSubtract] = useState(false);
   const [isApplyingScore, setIsApplyingScore] = useState(false);
+  const isPreviewMode = Boolean(location.state?.fromEditor);
 
   useEffect(() => {
     async function loadGame() {
@@ -56,7 +55,7 @@ function SupergamePlayerPage() {
       }
 
       const supergamePage = (savedGame.gameConfig?.pages || []).find(
-        (page) => page.id === pageId && page.type === "supergame"
+        (entry) => entry.id === pageId && entry.type === "supergame"
       );
 
       if (!supergamePage) {
@@ -78,91 +77,25 @@ function SupergamePlayerPage() {
     );
   }, [game, pageId]);
 
+  const supergameType = page?.supergameType || "default";
+
   const players = useMemo(() => {
     return normalizePlayers(game);
   }, [game]);
 
   const currency = game?.currency || "Points";
-
-  const pageTitle =
-    page?.titleMode === "custom" && page?.customTitle?.trim()
-      ? page.customTitle.trim()
-      : page?.name || "Supergame";
+  const usesIntegratedScoreLayout = supergameType === "bingo";
+  const returnTo =
+    location.state?.returnTo ||
+    (location.state?.fromEditor
+      ? `/game/${id}/supergame/${pageId}`
+      : `/game/${id}`);
 
   useEffect(() => {
     if (!selectedPlayerId && players.length > 0) {
       setSelectedPlayerId(players[0].id);
     }
   }, [players, selectedPlayerId]);
-
-  useEffect(() => {
-    let isCancelled = false;
-    const objectUrls = [];
-
-    async function loadMediaPreviews() {
-      if (!page?.mediaItems?.length) {
-        setMediaPreviewMap({});
-        return;
-      }
-
-      const nextPreviews = {};
-
-      for (const item of page.mediaItems) {
-        if (!item?.mediaId) continue;
-
-        const mediaRecord = await getMediaById(item.mediaId);
-        if (!mediaRecord?.blob) continue;
-
-        const previewUrl = URL.createObjectURL(mediaRecord.blob);
-        objectUrls.push(previewUrl);
-        nextPreviews[item.id] = previewUrl;
-      }
-
-      if (!isCancelled) {
-        setMediaPreviewMap(nextPreviews);
-      }
-    }
-
-    loadMediaPreviews();
-
-    return () => {
-      isCancelled = true;
-      objectUrls.forEach((url) => URL.revokeObjectURL(url));
-    };
-  }, [page]);
-
-  useEffect(() => {
-    let isCancelled = false;
-    let objectUrl = "";
-
-    async function loadBackgroundPreview() {
-      if (!page?.useCustomBackground || !page?.backgroundMediaId) {
-        setBackgroundPreviewUrl("");
-        return;
-      }
-
-      const mediaRecord = await getMediaById(page.backgroundMediaId);
-      if (!mediaRecord?.blob) {
-        setBackgroundPreviewUrl("");
-        return;
-      }
-
-      objectUrl = URL.createObjectURL(mediaRecord.blob);
-
-      if (!isCancelled) {
-        setBackgroundPreviewUrl(objectUrl);
-      }
-    }
-
-    loadBackgroundPreview();
-
-    return () => {
-      isCancelled = true;
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-      }
-    };
-  }, [page]);
 
   async function applyScoreToPlayer(playerId) {
     if (!game || !playerId || isApplyingScore) return;
@@ -204,10 +137,6 @@ function SupergamePlayerPage() {
     return <p>Loading...</p>;
   }
 
-  const returnTo =
-    location.state?.returnTo ||
-    (location.state?.fromEditor ? `/game/${id}/supergame/${pageId}` : `/game/${id}`);
-
   return (
     <section className="game-flow-player-page">
       <div className="game-flow-player-toolbar">
@@ -223,19 +152,24 @@ function SupergamePlayerPage() {
       </div>
 
       <div className="game-flow-player-stage">
-        <FlowPageRenderer
-          page={{
-            ...page,
-            type: "supergame",
-          }}
-          pageTitle={pageTitle}
-          mediaPreviewMap={mediaPreviewMap}
-          backgroundPreviewUrl={backgroundPreviewUrl}
-          mode="gameplay"
-        />
+        {supergameType === "bingo" ? (
+          <BingoPlayerPage
+            game={game}
+            page={page}
+            players={players}
+            currency={currency}
+            mode={isPreviewMode ? "preview" : "play"}
+            onUpdateGame={setGame}
+          />
+        ) : (
+          <div className="supergame-player-fallback">
+            <h1>{page.name || "Supergame"}</h1>
+            <p>This supergame type is not supported yet.</p>
+          </div>
+        )}
       </div>
 
-      {players.length > 0 && (
+      {players.length > 0 && !usesIntegratedScoreLayout && (
         <div className="game-flow-player-scoring-dock">
           <div className="game-flow-player-scoring-simple">
             <div className="game-flow-player-amount-row">
@@ -282,12 +216,14 @@ function SupergamePlayerPage() {
                 >
                   <span>{player.name}</span>
                   <span className="game-flow-player-player-score">
-        {player.score}
-      </span>
+                    {player.score}
+                  </span>
                 </button>
               ))}
             </div>
+
             <button
+              type="button"
               className="secondary-btn"
               onClick={() => navigate(`/game/${id}/winner`)}
             >
