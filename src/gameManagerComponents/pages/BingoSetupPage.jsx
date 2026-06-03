@@ -4,7 +4,7 @@ import { getGameById, updateGame } from "../../db.js";
 import "../../index.css";
 
 const MIN_SIZE = 4;
-const MAX_SIZE = 6;
+const MAX_SIZE = 8;
 
 function clampCount(value, min, max, fallback) {
   const parsed = Number(value);
@@ -200,7 +200,7 @@ function BingoSetupPage() {
 
         <div className="board-setup-grid">
           <label className="board-setup-field">
-            <span>Board size (4-6)</span>
+            <span>Board size (4-8)</span>
             <input
               type="text"
               inputMode="numeric"

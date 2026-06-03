@@ -24,6 +24,8 @@ function BingoPlayerPage({
   const rewards = page?.bingoConfig?.rewards || {};
 
   const [previewRevealedCellIds, setPreviewRevealedCellIds] = useState({});
+  const [bingoNotice, setBingoNotice] = useState("");
+  const [hasGameEnded, setHasGameEnded] = useState(false);
 
   const isPreview = mode === "preview";
 
@@ -41,13 +43,21 @@ function BingoPlayerPage({
     handleLiveCellClick(cell);
   }
 
+  function handleResetClick() {
+    setBingoNotice("");
+    setHasGameEnded(false);
+    onResetGrid?.();
+  }
+
   async function handleLiveCellClick(cell) {
-    if (!game || !page || !cell?.id || !selectedPlayerId) return;
+    if (!game || !page || !cell?.id || !selectedPlayerId || hasGameEnded) return;
 
     const rewards = page?.bingoConfig?.rewards || {};
     const cellPoints = Number(rewards.cellPoints) || 0;
+    const bingoPoints = Number(rewards.bingoPoints) || 0;
+    const size = Number(page?.bingoConfig?.size) || 4;
 
-    const updatedPages = (game.gameConfig?.pages || []).map((entry) => {
+    const basePages = (game.gameConfig?.pages || []).map((entry) => {
       if (entry.id !== page.id) return entry;
 
       const existingCells = entry?.bingoConfig?.cells || [];
@@ -70,47 +80,57 @@ function BingoPlayerPage({
       };
     });
 
-    const nextPlayers = (game.gameConfig?.players || game.players || []).map(
-      (player, index) => {
-        const normalizedId =
-          typeof player === "string" ? `player-${index}` : player.id || `player-${index}`;
+    const updatedPage = basePages.find((entry) => entry.id === page.id);
+    const updatedCells = updatedPage?.bingoConfig?.cells || [];
+    const bingoHit = hasAnyBingoByRevealStatus(updatedCells, size);
 
-        if (normalizedId !== selectedPlayerId) {
-          if (typeof player === "string") {
-            return {
-              id: normalizedId,
-              name: player,
-              score: 0,
-            };
-          }
+    const finalPages = basePages.map((entry) => {
+      if (entry.id !== page.id) return entry;
+      if (!bingoHit) return entry;
 
-          return {
-            ...player,
-            score: Number(player.score || 0),
-          };
-        }
+      return {
+        ...entry,
+        bingoConfig: {
+          ...entry.bingoConfig,
+          cells: updatedCells.map((existingCell) =>
+            existingCell.isRevealed
+              ? existingCell
+              : {
+                ...existingCell,
+                isRevealed: true,
+                claimedByPlayerId: existingCell.claimedByPlayerId || "",
+              }
+          ),
+        },
+      };
+    });
 
-        if (typeof player === "string") {
-          return {
-            id: normalizedId,
-            name: player,
-            score: cellPoints,
-          };
-        }
+    const nextPlayers = (game.gameConfig?.players || game.players || []).map((player, index) => {
+      const normalizedId =
+        typeof player === "string" ? `player-${index}` : player.id || `player-${index}`;
 
-        return {
-          ...player,
-          score: Number(player.score || 0) + cellPoints,
-        };
+      const baseScore = typeof player === "string" ? 0 : Number(player.score || 0);
+
+      if (normalizedId !== selectedPlayerId) {
+        return typeof player === "string"
+          ? { id: normalizedId, name: player, score: baseScore }
+          : { ...player, score: baseScore };
       }
-    );
+
+      let nextScore = baseScore + cellPoints;
+      if (bingoHit && bingoPoints > 0) nextScore += bingoPoints;
+
+      return typeof player === "string"
+        ? { id: normalizedId, name: player, score: nextScore }
+        : { ...player, score: nextScore };
+    });
 
     const updatedGame = {
       ...game,
       players: nextPlayers,
       gameConfig: {
         ...game.gameConfig,
-        pages: updatedPages,
+        pages: finalPages,
         players: nextPlayers,
       },
       updatedAt: Date.now(),
@@ -119,9 +139,135 @@ function BingoPlayerPage({
     try {
       await updateGame(updatedGame);
       onUpdateGame?.(updatedGame);
+
+      if (bingoHit) {
+        const playerName =
+          nextPlayers.find((player) => player.id === selectedPlayerId)?.name || "Player";
+        setBingoNotice(`${playerName} got Bingo +${bingoPoints}${currency}!`);
+        setHasGameEnded(true);
+      }
     } catch (error) {
       console.error("Failed to update Bingo cell:", error);
     }
+  }
+
+  function hasPlayerBingo(cells, size, playerId) {
+    if (!playerId) return false;
+
+    const grid = Array.from({ length: size }, () =>
+      Array.from({ length: size }, () => false)
+    );
+
+    // Mark positions claimed by this player
+    cells.forEach((cell, index) => {
+      const row = Math.floor(index / size);
+      const col = index % size;
+
+      if (cell && cell.claimedByPlayerId === playerId) {
+        grid[row][col] = true;
+      }
+    });
+
+    // Check rows
+    for (let r = 0; r < size; r++) {
+      let all = true;
+      for (let c = 0; c < size; c++) {
+        if (!grid[r][c]) {
+          all = false;
+          break;
+        }
+      }
+      if (all) return true;
+    }
+
+    // Check columns
+    for (let c = 0; c < size; c++) {
+      let all = true;
+      for (let r = 0; r < size; r++) {
+        if (!grid[r][c]) {
+          all = false;
+          break;
+        }
+      }
+      if (all) return true;
+    }
+
+    // Main diagonal
+    {
+      let all = true;
+      for (let i = 0; i < size; i++) {
+        if (!grid[i][i]) {
+          all = false;
+          break;
+        }
+      }
+      if (all) return true;
+    }
+
+    // Anti-diagonal
+    {
+      let all = true;
+      for (let i = 0; i < size; i++) {
+        if (!grid[i][size - 1 - i]) {
+          all = false;
+          break;
+        }
+      }
+      if (all) return true;
+    }
+
+    return false;
+  }
+
+  function hasAnyBingoByRevealStatus(cells, size) {
+    const revealed = Array.from({ length: size }, () =>
+      Array.from({ length: size }, () => false)
+    );
+
+    cells.forEach((cell, index) => {
+      const row = Math.floor(index / size);
+      const col = index % size;
+      if (cell?.isRevealed) {
+        revealed[row][col] = true;
+      }
+    });
+
+    // Rows
+    for (let row = 0; row < size; row += 1) {
+      if (revealed[row].every(Boolean)) return true;
+    }
+
+    // Columns
+    for (let col = 0; col < size; col += 1) {
+      let all = true;
+      for (let row = 0; row < size; row += 1) {
+        if (!revealed[row][col]) {
+          all = false;
+          break;
+        }
+      }
+      if (all) return true;
+    }
+
+    // Main diagonal
+    let mainDiagonal = true;
+    for (let i = 0; i < size; i += 1) {
+      if (!revealed[i][i]) {
+        mainDiagonal = false;
+        break;
+      }
+    }
+    if (mainDiagonal) return true;
+
+    // Anti-diagonal
+    let antiDiagonal = true;
+    for (let i = 0; i < size; i += 1) {
+      if (!revealed[i][size - 1 - i]) {
+        antiDiagonal = false;
+        break;
+      }
+    }
+    return antiDiagonal;
   }
 
   return (
@@ -255,7 +401,7 @@ function BingoPlayerPage({
                 Reveal all
               </button>
 
-              <button type="button" className="secondary-btn" onClick={onResetGrid}>
+              <button type="button" className="secondary-btn" onClick={handleResetClick}>
                 Reset grid
               </button>
 
@@ -267,6 +413,12 @@ function BingoPlayerPage({
                 Show winner
               </button>
             </div>
+          </div>
+        ) : null}
+
+        {bingoNotice ? (
+          <div className="bingo-player-theme-card manager-card" style={{ marginTop: "16px" }}>
+            <p>{bingoNotice}</p>
           </div>
         ) : null}
 
