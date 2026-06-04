@@ -26,6 +26,8 @@ function BoardEditorPage() {
   const [pointsInput, setPointsInput] = useState("");
   const [isSavingCell, setIsSavingCell] = useState(false);
   const [isCreatingFlow, setIsCreatingFlow] = useState(false);
+  const [isColumnAdvancedOpen, setIsColumnAdvancedOpen] = useState(false);
+  const [isTimerSectionOpen, setIsTimerSectionOpen] = useState(false);
 
   useEffect(() => {
     async function loadGame() {
@@ -208,6 +210,76 @@ function BoardEditorPage() {
     setIsCreatingFlow(false);
   }
 
+  async function toggleColumnTimer(enabled) {
+    if (!selectedCell || !game || !boardPage) return;
+
+    const updatedPages = game.gameConfig.pages.map((page) => {
+      if (page.id !== boardPage.id) return page;
+
+      return {
+        ...page,
+        categories: page.categories.map((category) =>
+          category.id === selectedCell.categoryId
+            ? {
+              ...category,
+              columnTimerEnabled: enabled,
+            }
+            : category
+        ),
+      };
+    });
+
+    const updatedGame = {
+      ...game,
+      gameConfig: {
+        ...game.gameConfig,
+        pages: updatedPages,
+      },
+      updatedAt: Date.now(),
+    };
+
+    await updateGame(updatedGame);
+    setGame(updatedGame);
+  }
+
+  async function updateColumnTimerSeconds(rawValue) {
+    if (!selectedCell || !game || !boardPage) return;
+
+    const numeric = Number(rawValue);
+    const seconds =
+      Number.isFinite(numeric) && numeric >= 1 && numeric <= 600
+        ? Math.round(numeric)
+        : 60;
+
+    const updatedPages = game.gameConfig.pages.map((page) => {
+      if (page.id !== boardPage.id) return page;
+
+      return {
+        ...page,
+        categories: page.categories.map((category) =>
+          category.id === selectedCell.categoryId
+            ? {
+              ...category,
+              columnTimerSeconds: seconds,
+            }
+            : category
+        ),
+      };
+    });
+
+    const updatedGame = {
+      ...game,
+      gameConfig: {
+        ...game.gameConfig,
+        pages: updatedPages,
+      },
+      updatedAt: Date.now(),
+    };
+
+    await updateGame(updatedGame);
+    setGame(updatedGame);
+  }
+
   async function persistCellPoints() {
     if (!game || !boardPage || !selectedCell || isSavingCell) return null;
 
@@ -377,6 +449,12 @@ function BoardEditorPage() {
 
     const flowId = crypto.randomUUID();
     const clueValue = latestPoints;
+    const useColumnTimer = Boolean(category.columnTimerEnabled);
+    const rawSeconds = Number(category.columnTimerSeconds || 60);
+    const timerSeconds =
+      Number.isFinite(rawSeconds) && rawSeconds >= 5 && rawSeconds <= 600
+        ? rawSeconds
+        : 60;
 
     const questionPage = {
       id: crypto.randomUUID(),
@@ -395,6 +473,8 @@ function BoardEditorPage() {
       text: "",
       media: [],
       hints: [],
+      enableTimer: useColumnTimer,
+      timerSeconds: useColumnTimer ? timerSeconds : 60,
     };
 
     const answerPage = {
@@ -652,6 +732,55 @@ function BoardEditorPage() {
                       <p>No column background selected.</p>
                     </div>
                   )}
+                </div>
+
+                <div className="board-side-panel__section">
+                  <button
+                    type="button"
+                    className="board-side-panel__section-header"
+                    onClick={() => setIsColumnAdvancedOpen((open) => !open)}
+                    aria-expanded={isColumnAdvancedOpen}
+                  >
+                    <div className="board-side-panel__section-header-text">
+                      <span className="board-side-panel__section-title">Advanced settings</span>
+                      {!isColumnAdvancedOpen && selectedCategory?.columnTimerEnabled ? (
+                        <span className="board-side-panel__section-summary">
+                          Timer {selectedCategory.columnTimerSeconds || 60}s
+                        </span>
+                                      ) : null}
+                                    </div>
+                                    <span className="board-side-panel__section-icon" aria-hidden="true">
+                      {isColumnAdvancedOpen ? "−" : "+"}
+                    </span>
+                  </button>
+
+                  {isColumnAdvancedOpen ? (
+                    <div className="board-side-panel__section-body board-side-panel__section-body--boxed">
+                      <label className="board-side-panel__timer-toggle">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(selectedCategory?.columnTimerEnabled)}
+                          onChange={(e) => toggleColumnTimer(e.target.checked)}
+                        />
+                        <span>Enable column timer </span>
+                      </label>
+
+                      {selectedCategory?.columnTimerEnabled ? (
+                        <div className="board-side-panel__timer-row">
+                          <label className="board-setup-field">
+                            <span>Timer length in seconds</span>
+                            <input
+                              type="number"
+                              min={1}
+                              max={600}
+                              value={selectedCategory?.columnTimerSeconds ?? 60}
+                              onChange={(e) => updateColumnTimerSeconds(e.target.value)}
+                            />
+                          </label>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="board-side-panel__actions">

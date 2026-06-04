@@ -3794,3 +3794,65 @@ textarea {
   opacity: 0.55;
   cursor: not-allowed;
 }
+
+.board-side-panel__timer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.board-side-panel__timer-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.board-side-panel__section-header {
+  width: 100%;
+  padding: 8px 0;
+  border: none;
+  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.board-side-panel__section-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.board-side-panel__section-title {
+  font-weight: 600;
+}
+
+.board-side-panel__section-summary {
+  font-size: 0.85rem;
+  color: var(--text-subtle);
+}
+
+.board-side-panel__section-icon {
+  font-size: 1.1rem;
+}
+
+.board-side-panel__section-body--boxed {
+  border: 1px solid var(--board-nav-button-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  background: var(--board-tone-050);
+}
+
+.board-side-panel__timer-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.board-side-panel__timer-toggle span {
+  white-space: nowrap;
+}
