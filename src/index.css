@@ -3832,7 +3832,7 @@ textarea {
 
 .board-side-panel__section-summary {
   font-size: 0.85rem;
-  color: var(--text-subtle);
+  color: var(--text);
 }
 
 .board-side-panel__section-icon {
