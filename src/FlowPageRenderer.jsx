@@ -227,6 +227,48 @@ function FlowPageRenderer({
         );
       }
 
+      case "image-text4":
+      case "video-text4":
+      case "audio-text4": {
+        const media = mediaItems[0] || null;
+        const optionBlocks = contentTextBlocks.slice(0, 4);
+
+        return (
+          <div className="flow-page-renderer__stacked-layout">
+            {/* Media in the middle */}
+            <div className="flow-page-renderer__media-column">
+              {media ? (
+                renderMediaItem(media)
+              ) : (
+                <div className="flow-page-renderer__media-placeholder">
+                  No media selected yet
+                </div>
+              )}
+            </div>
+
+            {/* Four options under the media, using the same styles as text-5 options */}
+            <div className="flow-page-renderer__text-column">
+              <div className="flow-page-renderer__text-grid flow-page-renderer__text-grid--4">
+                {optionBlocks.map((block, index) => (
+                  <div
+                    key={block?.id || index}
+                    className="flow-page-renderer__text-card flow-page-renderer__option-card"
+                  >
+                    {block?.value ? (
+                      <div className="flow-page-renderer__main-text">{block.value}</div>
+                    ) : (
+                      <div className="flow-page-renderer__empty">
+                        No option text added yet
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
       default:
         return (
           <div className="flow-page-renderer__text-only">

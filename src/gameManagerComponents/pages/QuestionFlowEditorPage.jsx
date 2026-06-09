@@ -89,6 +89,27 @@ const LAYOUT_OPTIONS = {
     mediaSlots: ["image", "audio"],
     description: "One image and one audio clip.",
   },
+  "image-text4": {
+    label: "1 image + 4 texts",
+    group: "combined",
+    textCount: 4,
+    mediaSlots: ["image"],
+    description: "Optional top question, one image, and four text blocks.",
+  },
+  "video-text4": {
+    label: "1 video + 4 texts",
+    group: "combined",
+    textCount: 4,
+    mediaSlots: ["video"],
+    description: "Optional top question, one video, and four text blocks.",
+  },
+  "audio-text4": {
+    label: "1 audio + 4 texts",
+    group: "combined",
+    textCount: 4,
+    mediaSlots: ["audio"],
+    description: "Optional top question, one audio clip, and four text blocks.",
+  },
 };
 
 function getLayoutDefinition(layout) {
@@ -864,7 +885,10 @@ function QuestionFlowEditorPage() {
   const shouldShowRegularTextSection =
     draft.layout === "text-1" ||
     draft.layout === "text-2" ||
-    draft.layout === "text-5";
+    draft.layout === "text-5" ||
+    draft.layout === "image-text4" ||
+    draft.layout === "video-text4" ||
+    draft.layout === "audio-text4";
   const supportsTopQuestionText =
     draft.layout !== "text-1" &&
     draft.layout !== "text-2" &&
@@ -1046,34 +1070,67 @@ function QuestionFlowEditorPage() {
               {shouldShowRegularTextSection && (
                 <div className="flow-editor-section">
                   <div className="flow-editor-stack">
-                    {draft.textBlocks.map((block, index) => (
-                      <label className="flow-editor-field" key={block.id}>
-            <span>
-              {currentLayoutDefinition.textCount === 1
-                ? isAnswerPage
-                  ? "Main text"
-                  : "Question text"
-                : draft.layout === "text-5"
-                  ? index === 0
-                    ? "Question text"
-                    : `Option ${index}`
-                  : `Text block ${index + 1}`}
-            </span>
-                        <textarea
-                          value={block.value || ""}
-                          onChange={(e) => updateTextBlock(block.id, e.target.value)}
-                          placeholder={
-                            draft.layout === "text-5"
-                              ? index === 0
-                                ? "Write the question shown to players"
-                                : `Write option ${index}`
-                              : isAnswerPage
-                                ? "Write the text shown on the answer page"
-                                : "Write the text shown to players"
-                          }
-                        />
-                      </label>
-                    ))}
+                    {(() => {
+                      const isCombinedLayout =
+                        draft.layout === "image-text4" ||
+                        draft.layout === "video-text4" ||
+                        draft.layout === "audio-text4";
+
+                      // For text-1 / text-2 / text-5: keep your existing generic mapping
+                      if (!isCombinedLayout) {
+                        return draft.textBlocks.map((block, index) => (
+                          <label className="flow-editor-field" key={block.id}>
+              <span>
+                {currentLayoutDefinition.textCount === 1
+                  ? isAnswerPage
+                    ? "Main text"
+                    : "Question text"
+                  : draft.layout === "text-5"
+                    ? index === 0
+                      ? "Question text"
+                      : `Option ${index}`
+                    : `Text block ${index + 1}`}
+              </span>
+                            <textarea
+                              value={block.value || ""}
+                              onChange={(e) => updateTextBlock(block.id, e.target.value)}
+                              placeholder={
+                                draft.layout === "text-5"
+                                  ? index === 0
+                                    ? "Write the question shown to players"
+                                    : `Write option ${index}`
+                                  : isAnswerPage
+                                    ? "Write the text shown on the answer page"
+                                    : "Write the text shown to players"
+                              }
+                            />
+                          </label>
+                        ));
+                      }
+
+                      // For combined layouts: explicitly map 4 options depending on checkbox
+                      const hasTopQuestion = draft.showQuestionText;
+                      const baseIndex = hasTopQuestion ? 1 : 0; // start at 1 when question is present
+
+                      return Array.from({ length: 4 }).map((_, optionIndex) => {
+                        const textIndex = baseIndex + optionIndex; // 0..3 or 1..4
+                        const block = draft.textBlocks[textIndex];
+
+                        // If block is missing (e.g. while toggling), skip gracefully
+                        if (!block) return null;
+
+                        return (
+                          <label className="flow-editor-field" key={block.id}>
+                            <span>{`Option ${optionIndex + 1}`}</span>
+                            <textarea
+                              value={block.value || ""}
+                              onChange={(e) => updateTextBlock(block.id, e.target.value)}
+                              placeholder={`Write option ${optionIndex + 1}`}
+                            />
+                          </label>
+                        );
+                      });
+                    })()}
                   </div>
                 </div>
               )}
