@@ -3220,7 +3220,7 @@ textarea {
 
 .flow-page-renderer__top-question .flow-page-renderer__main-text,
 .flow-page-renderer__top-question .flow-page-renderer__empty {
-  max-width: min(900px, 100%);
+  max-width: min(100%, 100%);
   margin: 0 auto;
   text-align: center;
   text-shadow: 1px 1px black;
@@ -3340,7 +3340,7 @@ textarea {
 
 .flow-page-renderer__top-question .flow-page-renderer__question-card {
   width: fit-content;
-  max-width: min(100%, 820px);
+  max-width: min(100%, 2020px);
   padding: 14px 22px;
   border-radius: 20px;
 }
