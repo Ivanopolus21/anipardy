@@ -2288,7 +2288,7 @@ textarea {
 }
 
 .flow-page-renderer--preview .flow-page-renderer__background {
-  filter: blur(10px);
+  filter: blur(6px);
   transform: scale(1.02);
 }
 
