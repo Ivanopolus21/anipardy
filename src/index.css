@@ -2325,6 +2325,7 @@ textarea {
 .flow-page-renderer--preview .flow-page-renderer__title {
   font-size: clamp(1.2rem, 1.4vw, 1.3rem);
   line-height: 1.08;
+  text-shadow: 2px 2px #000;
 }
 
 .flow-page-renderer--preview .flow-page-renderer__body {
@@ -3221,6 +3222,7 @@ textarea {
   max-width: min(900px, 100%);
   margin: 0 auto;
   text-align: center;
+  text-shadow: 1px 1px black;
 }
 
 .flow-page-renderer__layout {
