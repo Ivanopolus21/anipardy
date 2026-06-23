@@ -3933,3 +3933,7 @@ textarea {
   max-width: 100%;
   display: block;
 }
+
+.flow-page-renderer__stacked-layout .flow-page-renderer__image {
+  width: 40%;
+}
