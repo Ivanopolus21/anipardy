@@ -1373,7 +1373,7 @@ textarea {
   inset: 0;
   background-position: center;
   background-size: cover;
-  filter: blur(6px);
+  filter: blur(15px);
   transform: scale(1.03);
   opacity: 0.82;
 }
@@ -2288,7 +2288,7 @@ textarea {
 }
 
 .flow-page-renderer--preview .flow-page-renderer__background {
-  filter: blur(15px);
+  filter: blur(10px);
   transform: scale(1.02);
 }
 
