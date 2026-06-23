@@ -1422,9 +1422,9 @@ textarea {
 .flow-page-renderer__badge {
   padding: 7px 10px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgb(255 0 0 / 0.12);
   border: 1px solid rgba(255, 255, 255, 0.14);
-  font-size: 0.88rem;
+  font-size: 1.2rem;
   font-weight: 600;
 }
 
